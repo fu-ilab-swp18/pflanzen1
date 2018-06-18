@@ -1,0 +1,21 @@
+<html>
+<body>
+<table>
+<tr>
+<td>NODE ID</td>
+<td>HUMIDITY</td>
+<td>TEMPERATURE</td>
+<td>WATER</td>
+</tr>
+{% for sensor in sensors_details %}
+    <tr>
+        <td>{{sensor.sensor_id}}</td>
+        <td>{{sensor.humidity}}</td>
+        <td>{{sensor.temperature}}</td>
+        <td>{{sensor.water}}</td>
+     </tr>
+{% endfor %}
+</table>
+</body>
+</html>
+
