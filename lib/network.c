@@ -159,7 +159,7 @@ ssize_t h2op_send ( const nodeid_t recipient, H2OP_MSGTYPE type,
     buf.header.crc = htons(crc16_ccitt_calc((uint8_t*) &buf, buflen));
 
     rv = udp_send(&recipient_ip, H2OP_PORT, (uint8_t*) &buf, buflen);
-    printf("%d bytes sent to ", rv); ipv6_addr_print(&recipient_ip); putchar('\n');
+    printf("%d bytes sent to ", rv); fflush(stdout); ipv6_addr_print(&recipient_ip); putchar('\n');
     return rv;
 }
 

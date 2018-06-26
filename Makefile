@@ -10,8 +10,17 @@ APPLICATION = Pflanzen1
 # * sensor:		node that collects data fom attached sensors and forwards it
 # * collector:  node that collects sensor data, forwards it to the gateway, and
 #   		    controls the pump)
+BOARD ?= native
+
+# NOTE This is already take care of by RIOT
+# CFLAGS += -DBOARD_"$(shell echo $(BOARD) | tr a-z A-Z | tr - _)"
+
+CFLAGS += -DBOARD_TYPE=$(BOARD_TYPE)
+
 ROLE ?= sensor
+
 #TODO error for invalid values
+
 CFLAGS += -DNODE_ROLE=\"$(ROLE)\"
 CFLAGS += -DNODE_ROLE_"$(shell echo $(ROLE) | tr a-z A-Z)"
 
@@ -100,14 +109,28 @@ USEMODULE += auto_init_gnrc_netif
 USEMODULE += gnrc_ipv6_default
 USEMODULE += gnrc_icmpv6_echo
 USEMODULE += gnrc_sock_udp
+USEMODULE += gnrc_txtsnd
 # saul
 USEMODULE += saul_default
 # utilities
 USEMODULE += checksum
 
+
+USEMODULE += xtimer
+
+
+ifneq ($(BOARD),native)
+	FEATURES_REQUIRED = periph_adc
+endif
+
 # Comment this out to disable code in RIOT that does safety checking
 # which is not needed in a production environment but helps in the
 # development process:
 DEVELHELP ?= 1
+
+# custom debug settings
+DEBUG_ASSERT_VERBOSE ?= 0
+DEBUG_SENSORS ?= 0
+CFLAGS += -DDEBUG_SENSORS="$(DEBUG_SENSORS)"
 
 include $(RIOTBASE)/Makefile.include
