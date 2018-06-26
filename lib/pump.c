@@ -1,6 +1,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+#include "mbox.h"
 
 //Number of sensors
 #define NUM_SENSORS 5
@@ -18,20 +20,26 @@
 #define PUMP_THRESHOLD_VERYLOW  5
 
 //Table to storage sensors data the size of the table depens on the number of sensors
-int table [NUM_SENSORS][2];
+int table [NUM_SENSORS][3];
 bool pump_is_on = false;
-
+bool pump_is_empty = false;
+//For the PID Controller
+int integral = 0;
+int last_error = 0;
 //Each time we open/close the pump we should reset the table values
-void reset_table( int table[][2])
+void reset_table( int table[][3])
 {
     for (int i=0;i<NUM_SENSORS;i++){
         table[i][0]=0;
         table[i][1]=0;
+        table[i][2]=0;
     }
+    //Reset the last_error for the PID Controller
+    last_error = 0;
 }
 
 //Function that prints the table with the values just for visual information
-void print_table( int table[][2])
+void print_table( int table[][3])
 {
 	for(int i=0;i<NUM_SENSORS;i++){
 		printf("id: %d value: %d \n",table[i][0],table[i][1]);
@@ -52,12 +60,92 @@ void make_pump_close(void)
 printf("CLOSE PUMP \n");
 }
 
+void pump_get_data(int id,int data){
+
+    (void) id;
+    (void) data;
+    mbox_t* mbox;
+    msg_t* queue;
+    msg_t msg;
+
+    msg.type = 3;
+    queue = &msg;
+
+    mbox_t m = MBOX_INIT(queue,1);
+    mbox = &m;
+
+    mbox_put(mbox,queue);
+    msg.type = 16;
+
+    mbox_get(mbox,queue);
+    printf("hello %d",queue->type);
+
+}
+
 void pump_set_data(int id, int data)
 {
     int open_pump = 0;
     int close_pump = 0;
     int sum_hum = 0;
     int avg_hum = 0;
+//    mbox_t* mbox;
+//    msg_t* queue;
+    int current_data = 0;
+    int error = 0;
+    int target_data = 12;
+    int derivative = 0;
+    int pwm = 0;
+
+    //To adjust
+    int kp = 1;
+    int ki = 1.5;
+    int kd = 1.5;
+
+
+
+//    mbox_init(mbox,queue,1);
+//    mbox_put(mbox,
+
+
+    //PID Controller
+
+    //Get current data
+    current_data = data;
+
+    //Get error
+    error  = target_data - current_data;
+
+    //Calculate the Integral
+    integral = integral + error;
+
+    //Calculate the Derivative
+    derivative = error - last_error;
+
+    //Calculate the control Variable
+    pwm = (kp * error) + (ki * integral) + (kd * derivative);
+
+   //Limit the control within the predefined values
+   if(pwm < -5 && pwm > -10 ){
+	data = data-1;
+   }
+   if(pwm < -10 && pwm > -15){
+	data = data -2;
+   }
+   if(pwm < -15){
+	data = data -3;
+   }
+   if(pwm > 5 && pwm < 10){
+	data = data +1;
+  }
+  if(pwm > 10 && pwm < 15){
+	data = data +2;
+  }
+  if(pwm > 15){
+	data = data +3;
+  }
+
+   // Save the current error as last error for next iteration
+   last_error =  error;
 
     if(id == ID_WATER_LEVEL_SENSOR && data < HUMIDICITY_LEVEL_ACCEPTED)
     {
@@ -67,8 +155,9 @@ void pump_set_data(int id, int data)
         } else {
             printf("Need to be filled");
         }
+	pump_is_empty = true;
 
-    } else {
+    } else if(!pump_is_empty && id != ID_WATER_LEVEL_SENSOR) {
 
 
         if(data < PUMP_THRESHOLD_VERYLOW && !pump_is_on){
@@ -89,6 +178,7 @@ void pump_set_data(int id, int data)
                 if(table[i][0]==id){
                     repeated_data = true;
                     table[i][1] = data;
+                    table[i][2] = time(NULL);
                     printf("TableUpdated \n");
                     print_table(table);
                 }
@@ -101,6 +191,7 @@ void pump_set_data(int id, int data)
                 }
                 table[aux][0] = id;
                 table[aux][1] = data;
+                table[aux][2] = time(NULL);
                 printf("AddedToTable \n");
                 print_table(table);
             }
@@ -135,6 +226,24 @@ void pump_set_data(int id, int data)
 
         }
     }
+    else if(pump_is_empty == true && id == ID_WATER_LEVEL_SENSOR && data > HUMIDICITY_LEVEL_ACCEPTED){
+
+	pump_is_empty = false;
+    }
+
+
+
+   //We check that all sensors are working fine
+  for (int i=0;i<NUM_SENSORS;i++){
+
+	int wait_time = time(NULL);
+	if((table[i][2] - wait_time) >300){
+		printf("SENSOR %d is not working",table[i][0]);
+
+	}
+
+ }
+
 }
 
 int shell_pump_set_data( int argc, char * argv[])
