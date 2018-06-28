@@ -5,8 +5,8 @@
 #include "mbox.h"
 
 //Number of sensors
-#define NUM_SENSORS 5
-
+//#define NUM_SENSORS 5
+int num_sensors = 5;
 //ID of the water level sensor
 #define ID_WATER_LEVEL_SENSOR 6
 
@@ -20,7 +20,7 @@
 #define PUMP_THRESHOLD_VERYLOW  5
 
 //Table to storage sensors data the size of the table depens on the number of sensors
-int table [NUM_SENSORS][3];
+int table [num_sensors][3];
 bool pump_is_on = false;
 bool pump_is_empty = false;
 //For the PID Controller
@@ -29,7 +29,7 @@ int last_error = 0;
 //Each time we open/close the pump we should reset the table values
 void reset_table( int table[][3])
 {
-    for (int i=0;i<NUM_SENSORS;i++){
+    for (int i=0;i<num_sensors;i++){
         table[i][0]=0;
         table[i][1]=0;
         table[i][2]=0;
@@ -41,7 +41,7 @@ void reset_table( int table[][3])
 //Function that prints the table with the values just for visual information
 void print_table( int table[][3])
 {
-	for(int i=0;i<NUM_SENSORS;i++){
+	for(int i=0;i<num_sensors;i++){
 		printf("id: %d value: %d \n",table[i][0],table[i][1]);
 	}
 }
@@ -173,7 +173,7 @@ void pump_set_data(int id, int data)
 
             bool repeated_data = false;
             //If the sensor is already present in the table we update his value if not we add it to the table
-            for(int i=0;i<NUM_SENSORS;i++) {
+            for(int i=0;i<num_sensors;i++) {
 
                 if(table[i][0]==id){
                     repeated_data = true;
@@ -197,12 +197,12 @@ void pump_set_data(int id, int data)
             }
         }
         //When we got the values of all the sensors we operate with the values
-        if(table[NUM_SENSORS-1][0] != 0) {
+        if(table[num_sensors-1][0] != 0) {
             //Calculate the AvgHum
-            for(int i=0;i<NUM_SENSORS;i++){
+            for(int i=0;i<num_sensors;i++){
                 sum_hum = sum_hum + table[i][1];
             }
-            avg_hum = sum_hum / NUM_SENSORS;
+            avg_hum = sum_hum / num_sensors;
             printf("ALL SENSORS SENT THE DATA. Average: %d \n", avg_hum);
 
             if((avg_hum < PUMP_THRESHOLD_LOW) && (avg_hum > PUMP_THRESHOLD_VERYLOW)){
@@ -234,11 +234,13 @@ void pump_set_data(int id, int data)
 
 
    //We check that all sensors are working fine
-  for (int i=0;i<NUM_SENSORS;i++){
+  for (int i=0;i<num_sensors;i++){
 
 	int wait_time = time(NULL);
 	if((table[i][2] - wait_time) >300){
 		printf("SENSOR %d is not working",table[i][0]);
+		//We reduce the number of sensors because one of them is not working
+		num_sensors --;
 
 	}
 
