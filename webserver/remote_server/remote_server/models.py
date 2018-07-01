@@ -1,11 +1,11 @@
 from django.db import models
-
+from django.utils import timezone
 class Sensor(models.Model):
-    sensor_id = models.IntegerField(default = 0)
-    water = models.IntegerField(default=0)
-    temperature = models.IntegerField(default=0)
-    humidity = models.IntegerField(default=0)
+    sensor_id = models.IntegerField(null=True)
+    temperature = models.IntegerField(null=True)
+    humidity = models.IntegerField(null=True)
+    time_stamp = models.DateTimeField(default = timezone.now())
 
 class Pump(models.Model):
-    state = models.IntegerField(default=0)
-    date = models.DateTimeField('date captured')
+    state = models.IntegerField(null=True)
+    time_stamp = models.DateTimeField(default=timezone.now())

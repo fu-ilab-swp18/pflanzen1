@@ -10,32 +10,57 @@ from remote_server.models import Sensor, Pump
 import json
 import os.path
 
-class Sensor(object):
+class Sensor_obj(object):	#Helpful for building html template. see sensors_table.html
     sensor_id = 0
     humidity = 0
-    water = 0
     temperature = 0
- 
-    def __init__(self, sensor_id, humidity, water, temperature):
+    timestamp = ""
+    def __init__(self, sensor_id, humidity, temperature, timestamp):
         self.sensor_id = sensor_id
         self.humidity = humidity
-        self.water = water
         self.temperature = temperature
+        self.timestamp = timestamp
 
-def index(request):
-    return HttpResponse("Hello, world. You're at the pflanzen1 index.")
+class Pump_obj(object):
+    state = -1
+    time_stamp = timezone.now()
+    def __init__(self, state):
+        self.state = state
+
+@csrf_exempt
+def get_pump_data(request):
+    pump_obj_array  = []
+    for line in Pump.objects.all():
+          pump_obj_arr.append(Pump_obj(line.state,line.timestamp))
+    return render(request,'sensors_table.html',{'sensors_details': pump_obj_array, 'content': 'ok'})        
+
 
 def get_sensors_data(request):
-    db_files = [f for f in os.listdir(get_db_dir()) if f.endswith('.data')] 
     sensors_obj_array  = []
-    for sensor_file in db_files:
-        with open(os.path.join(get_db_dir(),sensor_file), "r") as f:
-            lines = f.read().splitlines()
-            last_line = lines[-1]
-            sensor_data = json.loads(last_line)
-            sensors_obj_array.append(Sensor(sensor_data['node_id'],sensor_data['humidity'],sensor_data['water'],sensor_data['temperature']))
-            print(sensor_data)   
+    for line in Sensor.objects.all():  
+        sensors_obj_array.append(Sensor_obj(line.sensor_id, line.humidity, line.temperature, line.time_stamp))
     return render(request,'sensors_table.html',{'sensors_details': sensors_obj_array, 'content': 'ok'})        
+
+def open_pump(request):
+    HttpResponse("Pump opened") 
+
+def close_pump(request):
+    HttpResponse("Pump closed")
+
+@csrf_exempt
+def set_pump_data(request):
+    if request.method == 'POST':
+        json_data = json.loads(request.read().decode('utf-8'))
+        try:
+            node_id = json_data['state']
+            write_pump_data_db(json_data)
+        except KeyError:
+            HttpResponseServerError("malformed data!")
+            raise Exception(KeyError)               
+        return HttpResponse("Got json data")
+    else:
+        return HttpResponseServerError("Invalid request.")
+
 
 @csrf_exempt
 def set_sensor_data(request):
@@ -45,41 +70,18 @@ def set_sensor_data(request):
             node_id = json_data['node_id']
             humidity = json_data['humidity']
             temperature = json_data['temperature']
-            water = json_data['water']
             write_sensor_data_db(json_data)
         except KeyError:
             print("INVALID REQUEST")
             HttpResponseServerError("malformed data!")               
         return HttpResponse("Got json data")
     else:
-        return HttpResponse("Invalid request.")
-def get_db_dir():
-    database_dir = 'sensors_database'
-    here = os.path.dirname(os.path.realpath(__file__))
-    return os.path.join(here,database_dir)
+        return HttpResponseServerError("Invalid request.")
 
-def get_sensor_file(note_id):
-    return os.path.join(get_db_dir(), 'sensor_'+node_id+'.data')
-
-def write_sensor_data_file(data):	
-     node_id = data['node_id']
-     humidity = data['humidity']
-     temperature = data['temperature']
-     water = data['water']
-     sensor_file = get_sensor_file(node_id)
-     try:
-        file_read = open (sensor_file, 'r')
-     except IOError:
-        print("Sensor file not initialized.")
-        return
- 
-     with open(sensor_file, "a") as f:
-         f.write(json.dumps(data) + "\n")
-         print("sensor data written to file")
 
 def write_pump_data_db(data):
-    p = Pump(state = data['state'], date = timezone.now())
+    p = Pump(state = data['state'])
     p.save()
 def write_sensor_data_db(data):
-     s = remote_server.models.Sensor(sensor_id = data['node_id'], water = data['water'], humidity = data['humidity'], temperature = data['temperature'])
+     s = remote_server.models.Sensor(sensor_id = data['node_id'], humidity = data['humidity'], temperature = data['temperature'])
      s.save()

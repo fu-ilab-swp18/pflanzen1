@@ -20,8 +20,13 @@ from . import views
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    path('', views.index, name='index'),
-    path('set_sensor_data', views.set_sensor_data , name = 'set-data'),
-    path('get_sensor_data', views.get_sensors_data , name = 'get-data'),
+    path('', views.get_sensors_data, name='index'),
+    path('set_sensor_data', views.set_sensor_data , name = 'set-sensor-data'),
+    path('get_sensor_data', views.get_sensors_data , name = 'get-sensor-data'),
+    path('set_pump_data', views.set_pump_data , name = 'set-pump-data'),
+    path('get_pump_data', views.get_pump_data , name = 'get-pump-data'),
+    path('open_pump', views.open_pump , name = 'open-pump'),
+    path('close_pump', views.close_pump , name = 'close-pump'),
+    
       
 ]
