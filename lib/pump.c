@@ -85,7 +85,7 @@ void pump_set_data(int id, int data)
 //    time_t timedata;
      //PID CONTROLLER-----------------------------------------------------
     int current_data=0;
-    int error = 0;
+    int current_error = 0;
     int target_data = 50;
     int derivative = 0;
     int pwm = 0;
@@ -98,13 +98,13 @@ void pump_set_data(int id, int data)
 	current_data = data;
 
 	//Get error
-	error = target_data - current_data;
+	current_error = target_data - current_data;
 
 	//Calculate the Integral
-	integral = integral + error;
+	integral = integral + current_error;
 
 	//Calculate the Derivative
-	derivative = error - last_error;
+	derivative = current_error - last_error;
 
 	//Calculate the control Variable
 	pwm = (kp*error)+(ki*integral)+(kd*derivative);
@@ -141,7 +141,7 @@ void pump_set_data(int id, int data)
 		data = data + 3;
 	}
 
-	last_error=error;
+	last_error= current_error;
 
      //END PID CONTROLLER-------------------------------------------------
 
@@ -189,9 +189,9 @@ void pump_set_data(int id, int data)
 
 		                table[i][2] = time(NULL);
                     if ( PFLANZEN_DEBUG ) {
-+                        printf("TableUpdated \n");
-+                        print_table(table);
-+                    }
+                       printf("TableUpdated \n");
+                       print_table(table);
+                    }
 
                 }
             }
@@ -206,9 +206,9 @@ void pump_set_data(int id, int data)
 
 		            table[aux][2] = time(NULL);
                 if ( PFLANZEN_DEBUG ) {
-+                    printf("AddedToTable \n");
-+                    print_table(table);
-+                }
+                    printf("AddedToTable \n");
+                    print_table(table);
+                }
 
             }
         }
