@@ -1,4 +1,4 @@
-#include "../util.h"
+#include "../util.c"
 #include "saul.h"
 #include "saul_reg.h"
 

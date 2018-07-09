@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -8,8 +10,8 @@
 #include "net/ipv6/addr.h"
 
 #include "global.c"
-#include "util.h"
-#include "pump.h"
+#include "util.c"
+#include "pump.c"
 
 #define IPV6_PREFIX_LENGTH (64)
 #define H2OP_PORT (44555)

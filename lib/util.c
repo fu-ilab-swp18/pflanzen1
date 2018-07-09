@@ -1,6 +1,13 @@
+#pragma once
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <unistd.h>
+
+#include "net/gnrc/rpl.h"
+#include "net/sock/udp.h"
+#include "net/ipv6/addr.h"
+
 
 #ifdef _PFLANZEN_DEBUG
 char PFLANZEN_DEBUG = _PFLANZEN_DEBUG;
@@ -25,6 +32,8 @@ int shell_debug ( int argc, char *argv[]) {
 int shell_info ( int argc, char *argv[]) {
     (void) argc;
     (void) argv;
+
+    int rv;
 
     printf("Node role:         %s\n", NODE_ROLE);
     printf("Node ID:           %04X\n", NODE_ID);
@@ -67,6 +76,7 @@ nodeid_t nodeid_from_device ( void ) {
      * 16 bits of the device's link local address.)
      * On error, returns 0.
      */
+    int rv;
     gnrc_netif_t *netif = NULL;
     ipv6_addr_t addrs[GNRC_NETIF_IPV6_ADDRS_NUMOF];
     nodeid_t nodeid;

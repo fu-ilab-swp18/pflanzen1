@@ -3,11 +3,11 @@
 
 #include <msg.h>
 #include <shell.h>
+#include <random.h>
 
-#include "random.h"
 #include "lib/network.c"
 #include "lib/pump.c"
-#include "lib/sensor.h"
+#include "lib/sensor.c"
 #include "lib/sensor_thread.c"
 #include "lib/util.c"
 #include "lib/global.c"

@@ -1,5 +1,6 @@
 #include "thread.h"
 #include "xtimer.h"
+#include "sensor.c"
 
 void *sensor_thread(void *arg)
 {

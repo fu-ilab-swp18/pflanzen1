@@ -8,7 +8,6 @@
 #include "periph/gpio.h"
 #include "saul.h"
 #include "saul_reg.h"
-#include "../util.h"
 
 #define ADC_USED_LINE               ADC_LINE(0)
 #define RES                         ADC_RES_12BIT

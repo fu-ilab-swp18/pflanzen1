@@ -1,8 +1,19 @@
+#pragma once
 
 #include "saul.h"
 #include "saul_reg.h"
 
+#ifdef BOARD_NATIVE
+#include "native/sensor.c"
+#endif
 
+#ifdef BOARD_SAMR21_XPRO
+#include "samr21_xpro/sensor.c"
+#endif
+
+#ifdef BOARD_PBA_D_01_KW2X
+#include "pba_d_01_kw2x/sensor.c"
+#endif
 int read_humidity(phydat_t *res);
 int read_light(phydat_t *res);
 
