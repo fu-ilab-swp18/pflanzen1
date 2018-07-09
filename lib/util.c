@@ -2,6 +2,49 @@
 #include <stdarg.h>
 #include <unistd.h>
 
+#ifdef _PFLANZEN_DEBUG
+char PFLANZEN_DEBUG = _PFLANZEN_DEBUG;
+#else
+char PFLANZEN_DEBUG = 0;
+#endif
+
+int shell_debug ( int argc, char *argv[]) {
+    if ( argc <= 1 || strcmp(argv[1], "on") == 0 ) {
+        PFLANZEN_DEBUG = 1;
+        printf("Debug prints activated. Run `%s off` to disable.\n", argv[0]);
+    } else if ( argc > 1 && strcmp(argv[1], "off") == 0 ) {
+        PFLANZEN_DEBUG = 0;
+        printf("Debug prints have been turned off.\n");
+    } else {
+        printf("Usage: %s [on]|off\n", argv[0]);
+        return 1;
+    }
+    return 0;
+}
+
+int shell_info ( int argc, char *argv[]) {
+    (void) argc;
+    (void) argv;
+
+    printf("Node role:         %s\n", NODE_ROLE);
+    printf("Node ID:           %04X\n", NODE_ID);
+
+    ipv6_addr_t addr;
+    h2op_nodeid_to_addr(NODE_ID, &addr);
+    printf("IP Address:        "); fflush(stdout);
+    ipv6_addr_print(&addr);
+    putchar('\n');
+
+    return 0;
+}
+
+int shell_exit ( int argc, char *argv[]) {
+    (void) argc;
+    (void) argv;
+
+    _exit(0);
+}
+
 // from https://stackoverflow.com/a/7776146/196244 , slightly adapted
 void hexdump (char *desc, void *addr, int len) {
     /* Print some data as a hexdump (like `hexdump -C`)

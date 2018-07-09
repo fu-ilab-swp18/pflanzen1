@@ -4,12 +4,12 @@
 /* interval of measurements in microseconds*/
 #define MEASUREMENTS_INTERVAL   (5 * 1000000)
 
-int enable_debug = 0;
-
 void *sensor_thread(void *arg)
 {
     (void) arg;
 
+// This can only be used when UPSTREAM_NODE is set.
+#ifdef UPSTREAM_NODE
     initialize_sensors();
 
     xtimer_ticks32_t last_wakeup = xtimer_now();
@@ -19,8 +19,7 @@ void *sensor_thread(void *arg)
         phydat_t res;
 
         int dim = read_humidity(&res);
-        if ( DEBUG_SENSORS ) {
-            printf("enable debug %d\n", enable_debug);
+        if ( PFLANZEN_DEBUG ) {
             if (dim >= 0) {
                 puts("Read humidity:");
                 phydat_dump(&res, dim);
@@ -28,19 +27,19 @@ void *sensor_thread(void *arg)
         }
 
 
-        /* broadcast humidity */
+        /* send humidity */
 
-        nodeid_t to = strtoul("0xffff", NULL, 16);
+        nodeid_t to = UPSTREAM_NODE;
         nodeid_t source = NODE_ID;
         H2OP_MSGTYPE type = H2OP_DATA_HUMIDITY;
         int16_t netval = htons(res.val[0]);
 
         int rv = h2op_send(to, type, (uint8_t*) &netval, sizeof(res.val[0]), source);
-        if ( DEBUG_SENSORS ) {
+        if ( PFLANZEN_DEBUG ) {
             if ( rv <= 0 ) {
-                error(0,-rv, "could not send data");
+                error(0,-rv, "could not send humidity data");
             } else {
-                puts("send humidity");
+                puts("humidity data sent");
             }
         }
 
@@ -49,6 +48,7 @@ void *sensor_thread(void *arg)
         xtimer_periodic_wakeup(&last_wakeup, period); 
         
     }
+#endif
 
     return NULL;
 }

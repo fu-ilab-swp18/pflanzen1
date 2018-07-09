@@ -44,6 +44,9 @@ else
 	CFLAGS += -DNODE_ID_="(0x$(NODE_ID))"
 endif
 
+PFLANZEN_DEBUG ?= 0
+CFLAGS += -D_PFLANZEN_DEBUG=$(PFLANZEN_DEBUG)
+
 # if a node cannot reach the collector directly (because of radio coverage
 # issues), another node can be used as a relay
 ifeq ($(ROLE), sensor)
@@ -66,10 +69,15 @@ IPV6_NETWORK ?= 0xfd9c5921b4afac01
 #XXX is this okay? is this safe? is this the best way to do this?
 CFLAGS += -DH2O_NETWORK_PREFIX="((uint64_t)$(IPV6_NETWORK)U)"
 # we need a third multicast group for this address (default is 2)
-CFLAGS += -DGNRC_NETIF_IPV6_GROUPS_NUMOF=3
+CFLAGS += -DGNRC_NETIF_IPV6_GROUPS_NUMOF=5
 
 # internal settings
 # -----------------
+
+THREAD_PRIORITY_PUMP ?= 3
+CFLAGS += -DTHREAD_PRIORITY_PUMP="($(THREAD_PRIORITY_PUMP))"
+THREAD_PRIORITY_H2OD ?= 6
+CFLAGS += -DTHREAD_PRIORITY_H2OD="($(THREAD_PRIORITY_H2OD))"
 
 ifeq ($(USE_LIBC_ERRORH), 1)
 	CFLAGS += -DUSE_LIBC_ERRORH
@@ -96,6 +104,8 @@ RIOTBASE ?= $(CURDIR)/RIOT
 # development process:
 CFLAGS += -DDEVELHELP
 
+CFLAGS += -DDEBUG_ASSERT_VERBOSE
+
 # Change this to 0 show compiler invocation lines by default:
 QUIET ?= 1
 
@@ -106,10 +116,11 @@ USEMODULE += ps
 # net
 USEMODULE += gnrc_netdev_default
 USEMODULE += auto_init_gnrc_netif
-USEMODULE += gnrc_ipv6_default
+USEMODULE += gnrc_ipv6_router_default
 USEMODULE += gnrc_icmpv6_echo
 USEMODULE += gnrc_sock_udp
 USEMODULE += gnrc_txtsnd
+USEMODULE += gnrc_rpl
 # saul
 USEMODULE += saul_default
 # utilities
@@ -127,10 +138,5 @@ endif
 # which is not needed in a production environment but helps in the
 # development process:
 DEVELHELP ?= 1
-
-# custom debug settings
-DEBUG_ASSERT_VERBOSE ?= 0
-DEBUG_SENSORS ?= 0
-CFLAGS += -DDEBUG_SENSORS="$(DEBUG_SENSORS)"
 
 include $(RIOTBASE)/Makefile.include

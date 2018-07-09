@@ -11,7 +11,7 @@ int read_humidity(phydat_t *res) {
     res->unit = UNIT_PERCENT;
     res->scale = 0;
     
-    if ( DEBUG_SENSORS ) {
+    if ( PFLANZEN_DEBUG ) {
         puts("Mocking val for read humidity as on native");
     }
 
@@ -27,7 +27,7 @@ int read_light(phydat_t *res) {
     res->unit = UNIT_CD;
     res->scale = 0;
     
-    if ( DEBUG_SENSORS ) {
+    if ( PFLANZEN_DEBUG ) {
         puts("Mocking val for read light as on native");
     }
 
