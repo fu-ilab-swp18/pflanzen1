@@ -245,6 +245,7 @@ void pump_set_data(int id, int data)
 	pump_is_empty = false;
    }
 }
+}
 
 int pump_get_data(void)
 {
