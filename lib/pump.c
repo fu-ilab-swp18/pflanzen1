@@ -107,7 +107,7 @@ void pump_set_data(int id, int data)
 	derivative = current_error - last_error;
 
 	//Calculate the control Variable
-	pwm = (kp*error)+(ki*integral)+(kd*derivative);
+	pwm = (kp*current_error)+(ki*integral)+(kd*derivative);
 
 	//Limit the control within the predefined values
 	if(pwm < -150){
