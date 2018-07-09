@@ -1,6 +1,115 @@
+#pragma once
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <unistd.h>
+
+#include "net/gnrc/rpl.h"
+#include "net/sock/udp.h"
+#include "net/ipv6/addr.h"
+
+
+#ifdef _PFLANZEN_DEBUG
+char PFLANZEN_DEBUG = _PFLANZEN_DEBUG;
+#else
+char PFLANZEN_DEBUG = 0;
+#endif
+
+int shell_debug ( int argc, char *argv[]) {
+    if ( argc <= 1 || strcmp(argv[1], "on") == 0 ) {
+        PFLANZEN_DEBUG = 1;
+        printf("Debug prints activated. Run `%s off` to disable.\n", argv[0]);
+    } else if ( argc > 1 && strcmp(argv[1], "off") == 0 ) {
+        PFLANZEN_DEBUG = 0;
+        printf("Debug prints have been turned off.\n");
+    } else {
+        printf("Usage: %s [on]|off\n", argv[0]);
+        return 1;
+    }
+    return 0;
+}
+
+int shell_info ( int argc, char *argv[]) {
+    (void) argc;
+    (void) argv;
+
+    int rv;
+
+    printf("Node role:         %s\n", NODE_ROLE);
+    printf("Node ID:           %04X\n", NODE_ID);
+
+    gnrc_netif_t *netif = NULL;
+    ipv6_addr_t addrs[GNRC_NETIF_IPV6_ADDRS_NUMOF];
+    while ( true ) {
+        netif = gnrc_netif_iter(netif);
+        if ( netif == NULL )
+            break;
+
+        rv = gnrc_netif_ipv6_addrs_get(netif, addrs,
+                GNRC_NETIF_IPV6_ADDRS_NUMOF*sizeof(ipv6_addr_t));
+        if ( rv < 0 )
+            continue;
+
+        for ( unsigned int i = 0; i < (rv/sizeof(ipv6_addr_t)); i++ ) {
+            ipv6_addr_t addr = addrs[i];
+            if ( ipv6_addr_is_global(&addr) ) {
+                printf("IP Address:        "); fflush(stdout);
+                ipv6_addr_print(&addr); putchar('\n');
+            }
+        }
+    }
+
+    return 0;
+}
+
+int shell_exit ( int argc, char *argv[]) {
+    (void) argc;
+    (void) argv;
+
+    _exit(0);
+}
+
+nodeid_t nodeid_from_device ( void ) {
+    /* return a node id that is specific to the device, iaw it is the same every
+     * time a node is rebooted. It is ensured that 0 > nodeid > 0xff00.
+     * (Implementation detail: Currently, we just use the least significant
+     * 16 bits of the device's link local address.)
+     * On error, returns 0.
+     */
+    int rv;
+    gnrc_netif_t *netif = NULL;
+    ipv6_addr_t addrs[GNRC_NETIF_IPV6_ADDRS_NUMOF];
+    nodeid_t nodeid;
+    while ( true ) {
+        netif = gnrc_netif_iter(netif);
+        if ( netif == NULL )
+            break;
+
+        rv = gnrc_netif_ipv6_addrs_get(netif, addrs,
+                GNRC_NETIF_IPV6_ADDRS_NUMOF*sizeof(ipv6_addr_t));
+        if ( rv < 0 )
+            continue;
+
+        for ( unsigned int i = 0; i < (rv/sizeof(ipv6_addr_t)); i++ ) {
+            ipv6_addr_t addr = addrs[i];
+            if ( ipv6_addr_is_link_local(&addr) ) {
+                nodeid = (addr.u8[14] << 8) + addr.u8[15];
+                if ( nodeid >= 0xff00 )
+                    nodeid &= 0x7fff;
+                if ( nodeid < 1 )
+                    nodeid |= 0x8000;
+
+                if ( PFLANZEN_DEBUG) {
+                    printf("Setting node ID to %04X from address: ", nodeid);
+                    fflush(stdout); ipv6_addr_print(&addr); putchar('\n');
+                }
+                return nodeid;
+            }
+        }
+    }
+    // nothing found
+    return 0;
+}
 
 // from https://stackoverflow.com/a/7776146/196244 , slightly adapted
 void hexdump (char *desc, void *addr, int len) {

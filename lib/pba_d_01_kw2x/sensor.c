@@ -29,7 +29,9 @@ int print_phydat(phydat_t *res){
 
 
 int read_humidity(phydat_t *res) {
-    saul_reg_t* dev = saul_reg_find_name("hdc1000");
+    /* read first humidity sensor that is on pba-d-01-kw2x board */
+    /* do not get by name as same sensor also gives temperature */
+    saul_reg_t* dev = saul_reg_find_type(SAUL_SENSE_HUM);
 
     int dim;
 
@@ -39,8 +41,10 @@ int read_humidity(phydat_t *res) {
         return -1;
     }
 
-    printf("Reading from sensor (%s|%s)\n", dev->name,
-         saul_class_to_str(dev->driver->type));
+    if ( PFLANZEN_DEBUG ) {
+        printf("Reading from sensor (%s|%s)\n", dev->name,
+             saul_class_to_str(dev->driver->type));
+    }
 
     return dim;
 }

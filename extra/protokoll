@@ -1,7 +1,7 @@
 The H2O Protocol
 ================
 
-Version 1.0.2 (2018-05-25)
+Version 1.0.3 (2018-07-09)
 
 General Information:
 * All multibyte fields use network byte order (big endian).
@@ -33,6 +33,8 @@ Header format
                 0x19 water level in pump bucket
             0x2? reserved for DATA REQUEST (not yet specified)
                 (same subtypes as in 0x1?)
+            0x3? CONFIGURATION
+                0x31 set measurement interval
             0x9? WARN
                 0x99 pump bucket empty
                 0x9a contradictory humidity values encountered
@@ -62,3 +64,4 @@ Data Format
 |   |   /-- Value
 11  0   Temperature (signed 16bit integer)
 12  0   Humidity (signed 16bit integer)
+31  0   interval in seconds (unsigned 32 bit integer)

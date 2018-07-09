@@ -25,9 +25,9 @@ CFLAGS += -DNODE_ROLE=\"$(ROLE)\"
 CFLAGS += -DNODE_ROLE_"$(shell echo $(ROLE) | tr a-z A-Z)"
 
 # The node's id is used to identify it in data messages, and is used to
-# assign it a unique IPv6 address. If not given explicitly, a random ID
-# is generated on startup in the range (0001..feff)
-# TODO: see if we can generate this deterministically from the node's hardware
+# assign it a unique IPv6 address. If not given explicitly, a deterministic ID
+# is generated from the device's link local address in the range (0001..feff).
+# It is also possible to assign a random node ID at every startup.
 
 # reserved node IDs
 COLLECTOR_NODE_ID ?= ff01
@@ -36,13 +36,18 @@ GATEWAY_NODE_ID ?= ff99
 ifeq ($(ROLE), collector)
 	NODE_ID ?= $(COLLECTOR_NODE_ID)
 else
-	NODE_ID ?= random
+	NODE_ID ?= device
 endif
 ifeq ($(NODE_ID), random)
 	CFLAGS += -DNODE_ID_RANDOM
+else ifeq ($(NODE_ID), device)
+	CFLAGS += -DNODE_ID_DEVICE
 else
 	CFLAGS += -DNODE_ID_="(0x$(NODE_ID))"
 endif
+
+PFLANZEN_DEBUG ?= 0
+CFLAGS += -D_PFLANZEN_DEBUG=$(PFLANZEN_DEBUG)
 
 # if a node cannot reach the collector directly (because of radio coverage
 # issues), another node can be used as a relay
@@ -66,10 +71,15 @@ IPV6_NETWORK ?= 0xfd9c5921b4afac01
 #XXX is this okay? is this safe? is this the best way to do this?
 CFLAGS += -DH2O_NETWORK_PREFIX="((uint64_t)$(IPV6_NETWORK)U)"
 # we need a third multicast group for this address (default is 2)
-CFLAGS += -DGNRC_NETIF_IPV6_GROUPS_NUMOF=3
+CFLAGS += -DGNRC_NETIF_IPV6_GROUPS_NUMOF=5
 
 # internal settings
 # -----------------
+
+THREAD_PRIORITY_PUMP ?= 3
+CFLAGS += -DTHREAD_PRIORITY_PUMP="($(THREAD_PRIORITY_PUMP))"
+THREAD_PRIORITY_H2OD ?= 6
+CFLAGS += -DTHREAD_PRIORITY_H2OD="($(THREAD_PRIORITY_H2OD))"
 
 ifeq ($(USE_LIBC_ERRORH), 1)
 	CFLAGS += -DUSE_LIBC_ERRORH
@@ -96,6 +106,8 @@ RIOTBASE ?= $(CURDIR)/RIOT
 # development process:
 CFLAGS += -DDEVELHELP
 
+CFLAGS += -DDEBUG_ASSERT_VERBOSE
+
 # Change this to 0 show compiler invocation lines by default:
 QUIET ?= 1
 
@@ -103,13 +115,15 @@ QUIET ?= 1
 USEMODULE += shell
 USEMODULE += shell_commands
 USEMODULE += ps
+USEMODULE += fib
 # net
 USEMODULE += gnrc_netdev_default
 USEMODULE += auto_init_gnrc_netif
-USEMODULE += gnrc_ipv6_default
+USEMODULE += gnrc_ipv6_router_default
 USEMODULE += gnrc_icmpv6_echo
 USEMODULE += gnrc_sock_udp
 USEMODULE += gnrc_txtsnd
+USEMODULE += gnrc_rpl
 # saul
 USEMODULE += saul_default
 # utilities
@@ -127,10 +141,5 @@ endif
 # which is not needed in a production environment but helps in the
 # development process:
 DEVELHELP ?= 1
-
-# custom debug settings
-DEBUG_ASSERT_VERBOSE ?= 0
-DEBUG_SENSORS ?= 0
-CFLAGS += -DDEBUG_SENSORS="$(DEBUG_SENSORS)"
 
 include $(RIOTBASE)/Makefile.include

@@ -1,14 +1,17 @@
+#pragma once
+
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "checksum/crc16_ccitt.h"
+#include "net/gnrc/rpl.h"
 #include "net/sock/udp.h"
 #include "net/ipv6/addr.h"
 
 #include "global.c"
-#include "util.h"
-#include "pump.h"
+#include "util.c"
+#include "pump.c"
 
 #define IPV6_PREFIX_LENGTH (64)
 #define H2OP_PORT (44555)
@@ -18,10 +21,12 @@ typedef enum {
     H2OP_DATA_TEMPERATURE = 0x11,
     H2OP_DATA_HUMIDITY = 0x12,
     H2OP_WARN_BUCKET_EMPTY = 0x99,
+    H2OP_CONF_MEASUREMENT_INTERVAL = 0x31,
 } H2OP_MSGTYPE;
 typedef enum {
     H2OP_DATA = 0x10,
-    H2OP_WARN = 0x99,
+    H2OP_CONF = 0x30,
+    H2OP_WARN = 0x90,
 } H2OP_MSGSUPERTYPE;
 #define H2OP_MSGSUPERTYPE_MASK (0xF0)
 char* h2op_msgtype_string ( H2OP_MSGTYPE t ) {
@@ -29,6 +34,7 @@ char* h2op_msgtype_string ( H2OP_MSGTYPE t ) {
         case H2OP_DATA_TEMPERATURE: return "H2OP_DATA_TEMPERATURE";
         case H2OP_DATA_HUMIDITY: return "H2OP_DATA_HUMIDITY";
         case H2OP_WARN_BUCKET_EMPTY: return "H2OP_WARN_BUCKET_EMPTY";
+        case H2OP_CONF_MEASUREMENT_INTERVAL: return "H2OP_CONF_MEASUREMENT_INTERVAL";
         default: return NULL;
     }
 }
@@ -44,6 +50,7 @@ typedef struct {
 #pragma pack(pop)
 #define H2OP_HEADER_LENGTH (sizeof(H2OP_HEADER))
 #define H2OP_MAX_LENGTH (127) // 802.15.4's mtu
+kernel_pid_t H2OD_THREAD_ID = KERNEL_PID_UNDEF;
 
 typedef void (*h2op_receive_handler) (uint8_t* buf, size_t buflen);
 typedef void (*h2op_receive_hook) (H2OP_MSGTYPE type, nodeid_t source,
@@ -90,11 +97,38 @@ void add_public_address ( const gnrc_netif_t *netif ) {
                                   GNRC_NETIF_IPV6_ADDRS_FLAGS_STATE_VALID);
     if ( rv != sizeof(ipv6_addr_t) ) {
         error(0,-rv, "Cannot set address");
-        printf("Tried adding address: "); ipv6_addr_print(&addr); putchar('\n');
+        printf("Tried adding address: "); fflush(stdout);
+        ipv6_addr_print(&addr); putchar('\n');
     } else {
-        printf("My public address is: "); ipv6_addr_print(&addr); putchar('\n');
+        printf("My public address is: "); fflush(stdout);
+        ipv6_addr_print(&addr); putchar('\n');
     }
 }
+
+void network_init ( bool rpl_root ){
+    rv = gnrc_rpl_init((*gnrc_netif_iter(NULL)).pid); // just use the first if
+    if ( rv < 0 ) {
+        error(-rv, 0, "Error while initializing RPL");
+    } else if (PFLANZEN_DEBUG) {
+        puts("RPL initialized.");
+    }
+
+    add_public_address(NULL);
+
+    if ( !rpl_root )
+        return;
+
+    ipv6_addr_t myaddr;
+    h2op_nodeid_to_addr(NODE_ID, &myaddr);
+
+    rv = (int) gnrc_rpl_root_init(1, &myaddr, false, false);
+    if ( rv == 0 ) {
+        puts("Error while setting RPL root");
+    } else if (PFLANZEN_DEBUG) {
+        puts("RPL root set.");
+    }
+}
+
 
 // section: h2op client
 
@@ -159,7 +193,10 @@ ssize_t h2op_send ( const nodeid_t recipient, H2OP_MSGTYPE type,
     buf.header.crc = htons(crc16_ccitt_calc((uint8_t*) &buf, buflen));
 
     rv = udp_send(&recipient_ip, H2OP_PORT, (uint8_t*) &buf, buflen);
-    printf("%d bytes sent to ", rv); fflush(stdout); ipv6_addr_print(&recipient_ip); putchar('\n');
+    if (PFLANZEN_DEBUG) {
+        printf("%d bytes sent to ", rv); fflush(stdout);
+        ipv6_addr_print(&recipient_ip); putchar('\n');
+    }
     return rv;
 }
 
@@ -189,21 +226,19 @@ void udp_server(uint16_t port, h2op_receive_handler handler) {
         return;
     }
 
-    printf("UDP server running on port %u.\n", port);
+    printf("Server running on port %u.\n", port);
 
     while (true) {
-        int res;
-
         //TODO: store sender address
-        res = sock_udp_recv(&sock, server_buffer, sizeof(server_buffer),
-                            SOCK_NO_TIMEOUT, NULL);
-        if ( res < 0 ) {
-            error(0, -res, "Error while receiving");
+        rv = sock_udp_recv(&sock, server_buffer, sizeof(server_buffer),
+                           SOCK_NO_TIMEOUT, NULL);
+        if ( rv < 0 ) {
+            error(0, -rv, "Error while receiving");
             return;
-        } else if ( res == 0 ) {
+        } else if ( rv == 0 ) {
             puts("no data received");
         } else {
-            handler(server_buffer, res);
+            handler(server_buffer, rv);
         }
     }
 }
@@ -283,18 +318,6 @@ void h2op_hooks_receive_handler ( uint8_t *buf, size_t packetlen ) {
     }
 }
 
-int h2o_server ( int argc, char *argv[]) {
-    (void) argc;
-    (void) argv;
-
-    puts("Starting Server. Example usage:");
-    puts("printf '\\xac\\x01\\x0c\\x00\\x12\\x34\\x4e\\x67DATA' "
-         "| nc -6u ff02::1%tapbr0 44555");
-
-    udp_server(H2OP_PORT, &h2op_hooks_receive_handler);
-    return 0;
-}
-
 void h2op_del_receive_hook ( h2op_receive_hook func ) {
     /* Remove a receive hook set by `h2op_add_receive_hook`.
      * If the hook is not defined, do nothing.
@@ -306,6 +329,7 @@ void h2op_del_receive_hook ( h2op_receive_hook func ) {
     }
 }
 
+//TODO not thread safe
 int h2op_add_receive_hook ( h2op_receive_hook func ) {
     /* Add a H2OP receive hook.
      * For each incoming H2OP packet, func() will be called once.
@@ -326,10 +350,36 @@ int h2op_add_receive_hook ( h2op_receive_hook func ) {
     return -ENOMEM;
 }
 
+void* h2od_thread ( void *arg ) {
+    (void) arg;
+    udp_server(H2OP_PORT, &h2op_hooks_receive_handler);
+    return NULL;
+}
+
+void h2od_start ( void ) {
+    if ( H2OD_THREAD_ID != KERNEL_PID_UNDEF ) {
+        puts("Server already running.");
+        return;
+    }
+
+    static char h2od_thread_stack[THREAD_STACKSIZE_MAIN];
+    H2OD_THREAD_ID = thread_create(h2od_thread_stack, sizeof(h2od_thread_stack),
+                                   THREAD_PRIORITY_H2OD, THREAD_CREATE_STACKTEST,
+                                   h2od_thread, NULL, "h2od_thread");
+
+    if ( H2OD_THREAD_ID < 0 ) {
+        error(0, -H2OD_THREAD_ID, "Cannot create h2od thread");
+        H2OD_THREAD_ID = KERNEL_PID_UNDEF;
+    }
+}
+
 // section: interaction with other modules
 
 void h2op_debug_hook (H2OP_MSGTYPE type, nodeid_t source,
                       uint8_t* data, size_t len) {
+    if (!PFLANZEN_DEBUG)
+        return;
+
     printf("H2OP packet received.  type: %s(0x%X)  source: %04x\n",
             h2op_msgtype_string(type), type, source);
     switch ( type ) {
@@ -342,6 +392,11 @@ void h2op_debug_hook (H2OP_MSGTYPE type, nodeid_t source,
             if (len != 2) break;
             int16_t hum = ntohs(* (int16_t*) data);
             printf("Humidity: %hd\n", hum);
+            return;
+        case H2OP_CONF_MEASUREMENT_INTERVAL:
+            if (len != 4) break;
+            uint32_t interval = ntohl(* (uint32_t*) data);
+            printf("Interval: %"PRIu32"\n", interval);
             return;
         default:
             // avoid "blabla not handled in switch" error
@@ -360,9 +415,12 @@ void h2op_forward_data_hook (H2OP_MSGTYPE type, nodeid_t source,
         return;
     }
 
+    if ( PFLANZEN_DEBUG ) {
+        printf("Forwarding packet... ");
+    }
     rv = h2op_send(UPSTREAM_NODE, type, data, len, source);
     if ( rv <= 0 ) {
-        error(0,rv,"Could not forward packet");
+        error(0,-rv,"Could not forward packet");
     }
 }
 #endif
@@ -375,6 +433,21 @@ void h2op_pump_set_data_hook (H2OP_MSGTYPE type, nodeid_t source,
     int16_t hum = ntohs(* (int16_t*) data);
 
     pump_set_data(source, hum);
+}
+
+void h2op_measurement_interval_hook (H2OP_MSGTYPE type, nodeid_t source,
+                                     uint8_t* data, size_t len) {
+    (void) source;
+
+    if ( type != H2OP_CONF_MEASUREMENT_INTERVAL ) return;
+    if ( len != 4 ) return;
+
+    uint32_t interval = ntohl(* (uint32_t*) data);
+
+    MEASUREMENT_INTERVAL = interval;
+    if ( PFLANZEN_DEBUG ) {
+        printf("Measurement interval set to %"PRIu32"\n", interval);
+    }
 }
 
 // section: shell handlers
@@ -412,6 +485,7 @@ int h2o_send_data_shell ( int argc, char *argv[]) {
         to = UPSTREAM_NODE;
 #else
         fprintf(stderr, "No upstream node set. TO cannot be empty.\n");
+        return 1;
 #endif
     } else {
         to = strtoul(argv[4], NULL, 16);
@@ -429,18 +503,37 @@ int h2o_send_data_shell ( int argc, char *argv[]) {
     }
 }
 
-int shell_h2od_debug(int argc, char *argv[])
-{
-    if ( argc <= 1 || strcmp(argv[1], "on") == 0 ) {
-        h2op_add_receive_hook(&h2op_debug_hook);
-        printf("Debug prints activated. Run `%s off` to disable.\n", argv[0]);
-    } else if ( argc > 1 && strcmp(argv[1], "off") == 0 ) {
-        h2op_del_receive_hook(&h2op_debug_hook);
-        printf("Debug prints have been turned off.\n");
-    } else {
-        printf("Usage: %s [on]|off\n", argv[0]);
-        return 1;
-    }
+int shell_h2od ( int argc, char *argv[]) {
+    (void) argc;
+    (void) argv;
+
+    h2od_start();
     return 0;
 }
 
+int h2o_set_measurement_interval_shell (int argc, char *argv[]) {
+    if ( argc < 2 ) {
+        printf("Usage: %s usecs [node]\n", argv[0]);
+        printf("`node` defaults to current node. Use ffff for all nodes.\n");
+        return 1;
+    }
+
+    int32_t interval = strtol(argv[1], NULL, 10);
+    nodeid_t to = 0;
+    if ( argc > 2 ) {
+        to = strtoul(argv[2], NULL, 16);
+    }
+    if ( to == 0 ) {
+        to = NODE_ID; // default: only this node
+    }
+
+    uint32_t netval = htonl(interval);
+    rv = h2op_send(to, H2OP_CONF_MEASUREMENT_INTERVAL,
+              (uint8_t*) &netval, sizeof(interval), NODE_ID);
+    if ( rv <= 0 ) {
+        error(0,-rv, "could not send data");
+        return 1;
+    } else {
+        return 0;
+    }
+}

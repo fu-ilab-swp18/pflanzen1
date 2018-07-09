@@ -8,24 +8,21 @@
 #include "periph/gpio.h"
 #include "saul.h"
 #include "saul_reg.h"
-#include "../util.h"
-
-#define RES                         ADC_RES_12BIT
 
 #define ADC_USED_LINE               ADC_LINE(0)
-#define ADC_SLEEP1                  (1)
-#define ADC_SLEEP2                  (1)
+#define RES                         ADC_RES_12BIT
+#define ADC_SLEEP1                  (900000)
 
 #define GPIO_POWER_PORT		        (PA)
 #define GPIO_POWER_PIN 		        (13)
 #define GPIO_POWER                  GPIO_PIN(GPIO_POWER_PORT, GPIO_POWER_PIN)
 
+#define ADC_MEASURED_OFFSET         (16.0f)
+#define ADC_MEASURED_MAX            (3395.0f)
+#define ADC_MAX                     (4095.0f)
+
 
 int initialize_sensors(void) {
-    
-    puts("\nRIOT test for a moisture sensor\n");
-    printf("\nusing GPIO port %d, pin %d", GPIO_POWER_PORT, GPIO_POWER_PIN);
-
     /* initialize a GPIO that powers the sensor just during a measure */
     if (gpio_init(GPIO_POWER, GPIO_OUT)== 0) {
         puts("    ...[ok]");
@@ -38,10 +35,7 @@ int initialize_sensors(void) {
     /* first set LOW */  
     gpio_clear(GPIO_POWER);
     
-    /* initialize the adc device */ 
-    adc_t line = ADC_LINE(0);
-    printf("Initializing ADC_%i @ %i bit resolution", 0, (6 + (2* RES)));
-    if (adc_init(line) == 0) {
+    if (adc_init(ADC_USED_LINE) == 0) {
         puts("    ...[ok]");
     }
     else {
@@ -58,15 +52,19 @@ int read_humidity(phydat_t *res) {
     res->scale = 0;
 
     gpio_set(GPIO_POWER);
-    xtimer_sleep(ADC_SLEEP1);
+    xtimer_usleep(ADC_SLEEP1);
 
-    double value = (double) adc_sample(ADC_USED_LINE, RES);
-    xtimer_sleep(ADC_SLEEP2);
+    int measurement = adc_sample(ADC_USED_LINE, RES);
     gpio_clear(GPIO_POWER);
 
-    double max = 4095.0;
+    if ( PFLANZEN_DEBUG ) {
+        printf("adc sample value: %d\n", measurement);
+    }
 
-    value = (100.0/max) * value;
+    double value = (double) measurement;
+    double gain = ADC_MAX / (ADC_MEASURED_MAX - ADC_MEASURED_OFFSET);
+    value = (value - ADC_MEASURED_OFFSET) * gain;
+    value = (100.0/ADC_MAX) * value;
 
     res->val[0] = value;
     res->val[1] = 0;
