@@ -110,7 +110,7 @@ void pump_set_data(int id, int data)
 	pwm = (kp*error)+(ki*integral)+(kd*derivative);
 
 	//Limit the control within the predefined values
-	if(pwm < -150 && pwm > -200){
+	if(pwm < -150){
 		data = data - 10;
 	}
 
@@ -125,7 +125,7 @@ void pump_set_data(int id, int data)
 		data = data - 3;
 	}
 
-	if(pwm > 150 && pwm < 200){
+	if(pwm > 150){
 		data = data + 10;
 	}
 
