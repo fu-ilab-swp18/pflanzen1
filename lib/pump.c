@@ -94,24 +94,53 @@ void make_pump_open(void)
    make_pump_close();
 }
 
-void pump_set_data(int id, int data)
+
+void water_level_sensor_control (int data)
 {
 
-    // mbox_t mbox;
-    // msg_t*  msg;
-    //  msg_t  mssg;
-    // msg->type= 2;
-    //    mbox = MBOX_INIT(msg, 1);
-    //  mbox_t* m;
-    //  mssg.type=2;
-    //  msg = &mssg;
-    // m = &mbox;
-    // mbox_put(m,msg);
-    int open_pump = 0;
-    int close_pump = 0;
-    int sum_hum = 0;
-    int avg_hum = 0;
-    //    time_t timedata;
+	if(data < HUMIDICITY_LEVEL_ACCEPTED){
+		if(pump_is_on){
+			make_pump_close();
+			printf("Need to be filled");
+		}
+		else {
+			printf("Need to be filled");
+		}
+	}
+}
+void add_data_table(int id,int data)
+{
+    bool repeated_data = false;
+                //If the sensor is already present in the table we update his value if not we add it to the table
+                for(int i=0;i<NUM_SENSORS;i++) {
+
+                    if(table[i][0]==id){
+                        repeated_data = true;
+                        table[i][1] = data;
+                        table[i][2] = time(NULL);
+                        if ( PFLANZEN_DEBUG ) {
+                            printf("TableUpdated \n");
+                            print_table(table);
+                        }
+                    }
+                }
+                if(!repeated_data){
+                    int aux=0;
+                    //We look for the first free space in the table
+                    while(table[aux][0] != 0){
+                        aux++;
+                    }
+                    table[aux][0] = id;
+                    table[aux][1] = data;
+                    table[aux][2] = time(NULL);
+                    if ( PFLANZEN_DEBUG ) {
+                        printf("AddedToTable \n");
+                        print_table(table);
+                    }
+                }
+}
+int add_pid_controller(int data)
+{
     //PID CONTROLLER-----------------------------------------------------
     int current_data=0;
     int actual_error = 0;
@@ -172,63 +201,57 @@ void pump_set_data(int id, int data)
 
     last_error=actual_error;
 
+    return data;
     //END PID CONTROLLER-------------------------------------------------
+}
 
-    if((id == ID_WATER_LEVEL_SENSOR) && (data < HUMIDICITY_LEVEL_ACCEPTED)) {
+void pump_set_data(int id, int data)
+{
 
-        if(pump_is_on){
-            make_pump_close();
-            printf("Need to be filled");
-        } else {
-		printf("Need to be filled");
+    // mbox_t mbox;
+    // msg_t*  msg;
+    //  msg_t  mssg;
+    // msg->type= 2;
+    //    mbox = MBOX_INIT(msg, 1);
+    //  mbox_t* m;
+    //  mssg.type=2;
+    //  msg = &mssg;
+    // m = &mbox;
+    // mbox_put(m,msg);
+    int open_pump = 0;
+    int close_pump = 0;
+    int sum_hum = 0;
+    int avg_hum = 0;
+    //    time_t timedata; 
+    data = add_pid_controller(data);
+
+    if(id == ID_WATER_LEVEL_SENSOR) {
+
+        water_level_sensor_control(data);
 	}
 
 
-    } else if((id != ID_WATER_LEVEL_SENSOR) && (!pump_is_empty)){
+     else{
+         if(!pump_is_empty){
+
+             if(data < PUMP_THRESHOLD_VERYLOW && !pump_is_on){
+
+                    make_pump_open();
+                    reset_table(table);
+                //   pump_is_on = true;
 
 
-	if(data < PUMP_THRESHOLD_VERYLOW && !pump_is_on){
-
-                make_pump_open();
-                reset_table(table);
-             //   pump_is_on = true;
-
-
-         } else if((data  > PUMP_THRESHOLD_VERYHIGH) && (pump_is_on)) {
+             }
+             else if((data  > PUMP_THRESHOLD_VERYHIGH) && (pump_is_on)) {
 
                 make_pump_close();
                 reset_table(table);
               //  pump_is_on = false;
-            } else {
+             }
+             else {
 
-                bool repeated_data = false;
-                //If the sensor is already present in the table we update his value if not we add it to the table
-                for(int i=0;i<NUM_SENSORS;i++) {
-
-                    if(table[i][0]==id){
-                        repeated_data = true;
-                        table[i][1] = data;
-                        table[i][2] = time(NULL);
-                        if ( PFLANZEN_DEBUG ) {
-                            printf("TableUpdated \n");
-                            print_table(table);
-                        }
-                    }
-                }
-                if(!repeated_data){
-                    int aux=0;
-                    //We look for the first free space in the table
-                    while(table[aux][0] != 0){
-                        aux++;
-                    }
-                    table[aux][0] = id;
-                    table[aux][1] = data;
-                    table[aux][2] = time(NULL);
-                    if ( PFLANZEN_DEBUG ) {
-                        printf("AddedToTable \n");
-                        print_table(table);
-                    }
-                }
+                add_data_table(id,data);
+                
             }
             //When we got the values of all the sensors we operate with the values
             if(table[NUM_SENSORS-1][0] != 0) {
