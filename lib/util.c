@@ -59,6 +59,10 @@ int shell_info ( int argc, char *argv[]) {
         }
     }
 
+#ifdef UPSTREAM_NODE
+    printf("Upstream Node:     %04X\n", UPSTREAM_NODE);
+#endif
+
     return 0;
 }
 

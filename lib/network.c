@@ -446,7 +446,8 @@ void h2op_measurement_interval_hook (H2OP_MSGTYPE type, nodeid_t source,
 
     MEASUREMENT_INTERVAL = interval;
     if ( PFLANZEN_DEBUG ) {
-        printf("Measurement interval set to %"PRIu32"\n", interval);
+        printf("Measurement interval set to %"PRIu32"s (%"PRIu32"us)\n",
+                interval/1000000, interval);
     }
 }
 
