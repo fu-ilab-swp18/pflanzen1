@@ -187,21 +187,14 @@ void pump_set_data(int id, int data)
     } else if((id != ID_WATER_LEVEL_SENSOR) && (!pump_is_empty)){
 
 
-        if((data < PUMP_THRESHOLD_VERYLOW) && (!pump_is_on)){
-
-            pump_is_empty = true;
-
-        } else if(!pump_is_empty && id != ID_WATER_LEVEL_SENSOR) {
-
-
-            if(data < PUMP_THRESHOLD_VERYLOW && !pump_is_on){
+	if(data < PUMP_THRESHOLD_VERYLOW && !pump_is_on){
 
                 make_pump_open();
                 reset_table(table);
              //   pump_is_on = true;
 
 
-            } else if((data  > PUMP_THRESHOLD_VERYHIGH) && (pump_is_on)) {
+         } else if((data  > PUMP_THRESHOLD_VERYHIGH) && (pump_is_on)) {
 
                 make_pump_close();
                 reset_table(table);
