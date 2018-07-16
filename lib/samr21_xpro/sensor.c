@@ -17,6 +17,12 @@
 #define GPIO_POWER_PIN 		        (13)
 #define GPIO_POWER                  GPIO_PIN(GPIO_POWER_PORT, GPIO_POWER_PIN)
 
+/* Adjust these values to calibrate the sensor.
+ * 1. Turn on debug
+ * 2. Hold the sensor in the air. Store the value shown as `adc sample value`
+ *    as ADC_MEASURED_OFFSET.
+ * 3. Hold the sensor in water, store as ADC_MEASURED_MAX.
+ */
 #define ADC_MEASURED_OFFSET         (16.0f)
 #define ADC_MEASURED_MAX            (3395.0f)
 #define ADC_MAX                     (4095.0f)
