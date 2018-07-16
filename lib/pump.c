@@ -16,9 +16,6 @@
 #include <math.h>
 #include <xtimer.h>
 
-//Number of sensors
-#define NUM_SENSORS 5
-
 //ID of the water level sensor
 #define ID_WATER_LEVEL_SENSOR COLLECTOR_NODE_ID
 

@@ -63,6 +63,9 @@ ifdef UPSTREAM_NODE
 	CFLAGS += -DUPSTREAM_NODE="(0x$(UPSTREAM_NODE)u)"
 endif
 
+NUM_SENSORS ?= 2
+CFLAGS += -DNUM_SENSORS=$(NUM_SENSORS)
+
 # network configuration
 # ---------------------
 
