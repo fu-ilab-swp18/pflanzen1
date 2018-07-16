@@ -65,7 +65,7 @@ void reset_table( int table[][3])
 void print_table( int table[][3])
 {
     for(int i=0;i<NUM_SENSORS;i++){
-        printf("id: %d value: %d at: %d \n",table[i][0],table[i][1],table[i][2]);
+        printf("id: %04X value: %d at: %d \n",table[i][0],table[i][1],table[i][2]);
     }
 }
 void initialize_pump(void){
@@ -328,7 +328,7 @@ int shell_pump_set_data( int argc, char * argv[])
     }
 
    initialize_pump();
-   int id = strtol( argv[1],NULL,10);
+   int id = strtol( argv[1],NULL,16);
    int data = strtol( argv[2],NULL,10);
    pump_set_data(id, data);
    make_pump_open(1);
