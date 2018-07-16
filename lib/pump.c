@@ -14,6 +14,7 @@
 #include "board.h"
 #include "xtimer.h"
 #include <math.h>
+#include <xtimer.h>
 
 //Number of sensors
 #define NUM_SENSORS 5
@@ -66,10 +67,12 @@ void print_table( int table[][3])
 void initialize_pump(void){
    //Initialize a GPIO that powers the pump
    if(gpio_init(GPIO_POWER_PUMP,GPIO_OUT)==0){
-	printf("GPIO Initialized");
+       if ( PFLANZEN_DEBUG ) {
+           puts("GPIO Initialized");
+       }
    }
    else{
-	printf("GPIO NOT Initialized");
+       puts("Error: GPIO NOT Initialized");
   }
   //Firts set LOW
   gpio_clear(GPIO_POWER_PUMP);
@@ -90,22 +93,18 @@ void make_pump_open(void)
    gpio_set(GPIO_POWER_PUMP);
    printf("OPEN PUMP \n");
    pump_is_on = true;
-   sleep(1);
+   xtimer_sleep(1);
    make_pump_close();
 }
 
 
 void water_level_sensor_control (int data)
 {
-
 	if(data < HUMIDICITY_LEVEL_ACCEPTED){
 		if(pump_is_on){
 			make_pump_close();
-			printf("Need to be filled");
 		}
-		else {
-			printf("Need to be filled");
-		}
+        puts("Need to be filled");
 	}
 }
 void add_data_table(int id,int data)
@@ -207,6 +206,9 @@ int add_pid_controller(int data)
 
 void pump_set_data(int id, int data)
 {
+    if ( PFLANZEN_DEBUG ) {
+        printf("pump set data id=%04X, data=%d\n", id, data);
+    }
 
     // mbox_t mbox;
     // msg_t*  msg;
@@ -260,7 +262,9 @@ void pump_set_data(int id, int data)
                     sum_hum = sum_hum + table[i][1];
                 }
                 avg_hum = sum_hum / NUM_SENSORS;
-                printf("ALL SENSORS SENT THE DATA. Average: %d \n", avg_hum);
+                if ( PFLANZEN_DEBUG ) {
+                    printf("ALL SENSORS SENT THE DATA. Average: %d \n", avg_hum);
+                }
 
                 if((avg_hum < PUMP_THRESHOLD_LOW) && (avg_hum > PUMP_THRESHOLD_VERYLOW)){
                     open_pump=1;
