@@ -87,7 +87,7 @@ void pump_set_data(int id, int data)
 //    time_t timedata;
      //PID CONTROLLER-----------------------------------------------------
     int current_data=0;
-    int actual_error = 0;
+    int current_error = 0;
     int target_data = 50;
     int derivative = 0;
     int pwm = 0;
@@ -100,19 +100,19 @@ void pump_set_data(int id, int data)
 	current_data = data;
 
 	//Get error
-	actual_error = target_data - current_data;
+	current_error = target_data - current_data;
 
 	//Calculate the Integral
-	integral = integral + actual_error;
+	integral = integral + current_error;
 
 	//Calculate the Derivative
-	derivative = actual_error - last_error;
+	derivative = current_error - last_error;
 
 	//Calculate the control Variable
-	pwm = (kp*actual_error)+(ki*integral)+(kd*derivative);
+	pwm = (kp*error)+(ki*integral)+(kd*derivative);
 
 	//Limit the control within the predefined values
-	if(pwm < -150 && pwm > -200){
+	if(pwm < -150){
 		data = data - 10;
 	}
 
@@ -127,7 +127,7 @@ void pump_set_data(int id, int data)
 		data = data - 3;
 	}
 
-	if(pwm > 150 && pwm < 200){
+	if(pwm > 150){
 		data = data + 10;
 	}
 
@@ -143,7 +143,7 @@ void pump_set_data(int id, int data)
 		data = data + 3;
 	}
 
-	last_error=actual_error;
+	last_error= current_error;
 
      //END PID CONTROLLER-------------------------------------------------
 
@@ -190,9 +190,10 @@ void pump_set_data(int id, int data)
                     table[i][1] = data;
                     table[i][2] = time(NULL);
                     if ( PFLANZEN_DEBUG ) {
-                        printf("TableUpdated \n");
-                        print_table(table);
+                       printf("TableUpdated \n");
+                       print_table(table);
                     }
+
                 }
             }
             if(!repeated_data){
@@ -208,6 +209,7 @@ void pump_set_data(int id, int data)
                     printf("AddedToTable \n");
                     print_table(table);
                 }
+
             }
         }
         //When we got the values of all the sensors we operate with the values
@@ -244,7 +246,6 @@ void pump_set_data(int id, int data)
 
 	pump_is_empty = false;
    }
-}
 }
 
 int pump_get_data(void)
