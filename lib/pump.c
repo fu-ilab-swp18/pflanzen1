@@ -6,7 +6,14 @@
 #include <time.h>
 #include <unistd.h>
 #include "mbox.h"
-
+#include "periph/gpio.h"
+#include "periph/adc.h"
+#include "saul.h"
+#include "saul_reg.h"
+#include "cpu.h"
+#include "board.h"
+#include "xtimer.h"
+#include <math.h>
 
 //Number of sensors
 #define NUM_SENSORS 5
@@ -23,6 +30,9 @@
 #define PUMP_THRESHOLD_LOW  40
 #define PUMP_THRESHOLD_VERYLOW  20
 
+#define GPIO_POWER_PORT		(PA)
+#define GPIO_POWER_PIN_PUMP		(16)
+#define GPIO_POWER_PUMP	 	GPIO_PIN(GPIO_POWER_PORT,GPIO_POWER_PIN_PUMP)
 
 //Table to storage sensors data the size of the table depens on the number of sensors
 int table [NUM_SENSORS][3];
@@ -53,17 +63,31 @@ void print_table( int table[][3])
         printf("id: %d value: %d at: %d \n",table[i][0],table[i][1],table[i][2]);
     }
 }
+void initialize_pump(void){
+   //Initialize a GPIO that powers the pump
+   if(gpio_init(GPIO_POWER_PUMP,GPIO_OUT)==0){
+	printf("GPIO Initialized");
+   }
+   else{
+	printf("GPIO NOT Initialized");
+  }
+  //Firts set LOW
+  gpio_clear(GPIO_POWER_PUMP);
+
+}
 
 void make_pump_close(void)
 {
-pump_is_on=false;
-printf("PUMP CLOSE \n");
+   gpio_clear(GPIO_POWER_PUMP);
+   pump_is_on=false;
+   printf("PUMP CLOSE \n");
 }
 
 //Function that activates the USB Port of the board
 void make_pump_open(void)
 {
 
+   gpio_set(GPIO_POWER_PUMP);
    printf("OPEN PUMP \n");
    pump_is_on = true;
    sleep(1);
@@ -159,7 +183,7 @@ void pump_set_data(int id, int data)
 		printf("Need to be filled");
 	}
 
-    
+
     } else if((id != ID_WATER_LEVEL_SENSOR) && (!pump_is_empty)){
 
 
@@ -269,9 +293,10 @@ int shell_pump_set_data( int argc, char * argv[])
         return 1;
     }
 
-    int id = strtol( argv[1],NULL,10);
-    int data = strtol( argv[2],NULL,10);
-    pump_set_data(id, data);
-    make_pump_open();
-    return 0;
+   initialize_pump();
+   int id = strtol( argv[1],NULL,10);
+   int data = strtol( argv[2],NULL,10);
+   pump_set_data(id, data);
+   make_pump_open();
+   return 0;
 }
