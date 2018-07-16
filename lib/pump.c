@@ -31,9 +31,11 @@
 #define PUMP_THRESHOLD_LOW  40
 #define PUMP_THRESHOLD_VERYLOW  20
 
+#ifdef BOARD_SAMR21_XPRO
 #define GPIO_POWER_PORT		(PA)
 #define GPIO_POWER_PIN_PUMP		(16)
 #define GPIO_POWER_PUMP	 	GPIO_PIN(GPIO_POWER_PORT,GPIO_POWER_PIN_PUMP)
+#endif
 
 //Table to storage sensors data the size of the table depens on the number of sensors
 int table [NUM_SENSORS][3];
@@ -65,6 +67,7 @@ void print_table( int table[][3])
     }
 }
 void initialize_pump(void){
+#ifdef BOARD_SAMR21_XPRO
    //Initialize a GPIO that powers the pump
    if(gpio_init(GPIO_POWER_PUMP,GPIO_OUT)==0){
        if ( PFLANZEN_DEBUG ) {
@@ -76,12 +79,14 @@ void initialize_pump(void){
   }
   //Firts set LOW
   gpio_clear(GPIO_POWER_PUMP);
-
+#endif
 }
 
 void make_pump_close(void)
 {
+#ifdef BOARD_SAMR21_XPRO
    gpio_clear(GPIO_POWER_PUMP);
+#endif
    pump_is_on=false;
    printf("PUMP CLOSE \n");
 }
@@ -89,8 +94,9 @@ void make_pump_close(void)
 //Function that activates the USB Port of the board
 void make_pump_open(void)
 {
-
+#ifdef BOARD_SAMR21_XPRO
    gpio_set(GPIO_POWER_PUMP);
+#endif
    printf("OPEN PUMP \n");
    pump_is_on = true;
    xtimer_sleep(1);
