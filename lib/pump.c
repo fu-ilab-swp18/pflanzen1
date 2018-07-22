@@ -251,6 +251,7 @@ void pump_set_data(int id, int data)
 
                     make_pump_open(aux);
                     reset_table(table);
+		    aux=1;
                 //   pump_is_on = true;
 
 
@@ -259,6 +260,7 @@ void pump_set_data(int id, int data)
 
                 make_pump_close();
                 reset_table(table);
+		aux=1;
               //  pump_is_on = false;
              }
              else {
@@ -285,6 +287,7 @@ void pump_set_data(int id, int data)
                     close_pump=1;
                 }
                 reset_table(table);
+		aux=1;
             }
 
             if(open_pump==1 && !pump_is_on){
