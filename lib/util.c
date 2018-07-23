@@ -19,7 +19,7 @@ int shell_debug ( int argc, char *argv[]) {
     if ( argc <= 1 ) {
         PFLANZEN_DEBUG = 1 - PFLANZEN_DEBUG;
         printf("Debug prints turned %s\n", (PFLANZEN_DEBUG ? "on" : "off"));
-    } else if ( argc > 1 || strcmp(argv[1], "on") == 0 ) {
+    } else if ( argc > 1 && strcmp(argv[1], "on") == 0 ) {
         PFLANZEN_DEBUG = 1;
         printf("Debug prints activated. Run `%s off` to disable.\n", argv[0]);
     } else if ( argc > 1 && strcmp(argv[1], "off") == 0 ) {
