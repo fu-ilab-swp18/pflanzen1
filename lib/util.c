@@ -16,14 +16,17 @@ char PFLANZEN_DEBUG = 0;
 #endif
 
 int shell_debug ( int argc, char *argv[]) {
-    if ( argc <= 1 || strcmp(argv[1], "on") == 0 ) {
+    if ( argc <= 1 ) {
+        PFLANZEN_DEBUG = 1 - PFLANZEN_DEBUG;
+        printf("Debug prints turned %s\n", (PFLANZEN_DEBUG ? "on" : "off"));
+    } else if ( argc > 1 || strcmp(argv[1], "on") == 0 ) {
         PFLANZEN_DEBUG = 1;
         printf("Debug prints activated. Run `%s off` to disable.\n", argv[0]);
     } else if ( argc > 1 && strcmp(argv[1], "off") == 0 ) {
         PFLANZEN_DEBUG = 0;
         printf("Debug prints have been turned off.\n");
     } else {
-        printf("Usage: %s [on]|off\n", argv[0]);
+        printf("Usage: %s (toggle), %s on, %s off\n", argv[0], argv[0], argv[0]);
         return 1;
     }
     return 0;
