@@ -75,9 +75,9 @@ void initialize_pump(void){
    }
    else{
        puts("Error: GPIO NOT Initialized");
-  }
-  //Firts set LOW
-  gpio_clear(GPIO_POWER_PUMP);
+   }
+   //First set LOW
+   gpio_clear(GPIO_POWER_PUMP);
 #endif
 }
 
@@ -324,10 +324,8 @@ int shell_pump_set_data( int argc, char * argv[])
         return 1;
     }
 
-   initialize_pump();
    int id = strtol( argv[1],NULL,16);
    int data = strtol( argv[2],NULL,10);
    pump_set_data(id, data);
-   make_pump_open(1);
    return 0;
 }

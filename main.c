@@ -77,6 +77,9 @@ h2op_add_receive_hook(&h2op_debug_hook);
     h2od_start();
 
     initialize_sensors();
+#ifdef BOARD_SAMR21_XPRO
+    initialize_pump();
+#endif
 
 #if defined(NODE_ROLE_COLLECTOR) || defined(NODE_ROLE_SENSOR)
 #ifdef NODE_ROLE_COLLECTOR
