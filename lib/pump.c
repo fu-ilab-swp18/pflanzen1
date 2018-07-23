@@ -37,6 +37,8 @@
 #define GPIO_POWER_PUMP	 	GPIO_PIN(GPIO_POWER_PORT,GPIO_POWER_PIN_PUMP)
 #endif
 
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+
 //Table to storage sensors data the size of the table depens on the number of sensors
 int table [NUM_SENSORS][3];
 bool pump_is_on = false;
@@ -92,14 +94,14 @@ void make_pump_close(void)
 }
 
 //Function that activates the USB Port of the board
-void make_pump_open(void)
+void make_pump_open(int aux)
 {
 #ifdef BOARD_SAMR21_XPRO
    gpio_set(GPIO_POWER_PUMP);
 #endif
    printf("OPEN PUMP \n");
    pump_is_on = true;
-   xtimer_sleep(1);
+   xtimer_sleep(aux);
    make_pump_close();
 }
 
@@ -152,6 +154,7 @@ int add_pid_controller(int data)
     int target_data = 50;
     int derivative = 0;
     int pwm = 0;
+    int aux = 0;
 
     //To Adjust
     int kp=2;
@@ -174,39 +177,39 @@ int add_pid_controller(int data)
 
     //Limit the control within the predefined values
     if(pwm < -150 && pwm > -200){
-        data = data - 10;
+        aux = 3;
     }
 
     if(pwm < -90 && pwm > -150){
-        data = data - 8;
+        aux = 2;
     }
 
     if(pwm < -30 && pwm > -90){
-        data = data - 5;
+        aux = 2;
     }
     if(pwm < 0 && pwm > -30){
-        data = data - 3;
+        aux = 1;
     }
 
     if(pwm > 150 && pwm < 200){
-        data = data + 10;
+        aux = 1;
     }
 
     if(pwm > 90 && pwm < 150){
-        data = data + 8;
+        aux = 1;
     }
 
     if(pwm > 30 && pwm < 90){
-        data = data + 5;
+        aux = 2;
     }
 
     if(pwm > 0 && pwm < 30){
-        data = data + 3;
+        aux = 3;
     }
 
     last_error=actual_error;
 
-    return data;
+    return aux;
     //END PID CONTROLLER-------------------------------------------------
 }
 
@@ -230,8 +233,10 @@ void pump_set_data(int id, int data)
     int close_pump = 0;
     int sum_hum = 0;
     int avg_hum = 0;
+    int aux=1;
+
     //    time_t timedata; 
-    data = add_pid_controller(data);
+    aux = MAX(add_pid_controller(data),aux);
 
     if(id == ID_WATER_LEVEL_SENSOR) {
 
@@ -244,8 +249,9 @@ void pump_set_data(int id, int data)
 
              if(data < PUMP_THRESHOLD_VERYLOW && !pump_is_on){
 
-                    make_pump_open();
+                    make_pump_open(aux);
                     reset_table(table);
+		    aux=1;
                 //   pump_is_on = true;
 
 
@@ -254,6 +260,7 @@ void pump_set_data(int id, int data)
 
                 make_pump_close();
                 reset_table(table);
+		aux=1;
               //  pump_is_on = false;
              }
              else {
@@ -280,10 +287,11 @@ void pump_set_data(int id, int data)
                     close_pump=1;
                 }
                 reset_table(table);
+		aux=1;
             }
 
             if(open_pump==1 && !pump_is_on){
-                make_pump_open();
+                make_pump_open(aux);
                // pump_is_on = true;
             }
 
@@ -323,6 +331,6 @@ int shell_pump_set_data( int argc, char * argv[])
    int id = strtol( argv[1],NULL,10);
    int data = strtol( argv[2],NULL,10);
    pump_set_data(id, data);
-   make_pump_open();
+   make_pump_open(1);
    return 0;
 }
