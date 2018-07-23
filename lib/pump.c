@@ -16,9 +16,6 @@
 #include <math.h>
 #include <xtimer.h>
 
-//Number of sensors
-#define NUM_SENSORS 5
-
 //ID of the water level sensor
 #define ID_WATER_LEVEL_SENSOR COLLECTOR_NODE_ID
 
@@ -33,7 +30,7 @@
 
 #ifdef BOARD_SAMR21_XPRO
 #define GPIO_POWER_PORT		(PA)
-#define GPIO_POWER_PIN_PUMP		(16)
+#define GPIO_POWER_PIN_PUMP		(18)
 #define GPIO_POWER_PUMP	 	GPIO_PIN(GPIO_POWER_PORT,GPIO_POWER_PIN_PUMP)
 #endif
 
@@ -62,10 +59,10 @@ void reset_table( int table[][3])
 }
 
 //Function that prints the table with the values just for visual information
-void print_table(void)
+void print_table( int table[][3])
 {
     for(int i=0;i<NUM_SENSORS;i++){
-        printf("id: %d value: %d at: %d \n",table[i][0],table[i][1],table[i][2]);
+        printf("id: %04X value: %d at: %d \n",table[i][0],table[i][1],table[i][2]);
     }
 }
 void initialize_pump(void){
@@ -78,9 +75,9 @@ void initialize_pump(void){
    }
    else{
        puts("Error: GPIO NOT Initialized");
-  }
-  //Firts set LOW
-  gpio_clear(GPIO_POWER_PUMP);
+   }
+   //First set LOW
+   gpio_clear(GPIO_POWER_PUMP);
 #endif
 }
 
@@ -112,11 +109,10 @@ void water_level_sensor_control (int data)
 		if(pump_is_on){
 			make_pump_close();
 		}
-        	puts("Need to be filled");
-		pump_is_empty = true;
+        puts("Need to be filled");
 	}
 	else{
-		pump_is_empty = false;
+		pump_is_empty = false;	
 	}
 }
 void add_data_table(int id,int data)
@@ -131,7 +127,7 @@ void add_data_table(int id,int data)
                         table[i][2] = time(NULL);
                         if ( PFLANZEN_DEBUG ) {
                             printf("TableUpdated \n");
-                            print_table();
+                            print_table(table);
                         }
                     }
                 }
@@ -146,7 +142,7 @@ void add_data_table(int id,int data)
                     table[aux][2] = time(NULL);
                     if ( PFLANZEN_DEBUG ) {
                         printf("AddedToTable \n");
-                        print_table();
+                        print_table(table);
                     }
                 }
 }
@@ -270,7 +266,7 @@ void pump_set_data(int id, int data)
              else {
 
                 add_data_table(id,data);
-
+                
             }
             //When we got the values of all the sensors we operate with the values
             if(table[NUM_SENSORS-1][0] != 0) {
@@ -331,10 +327,8 @@ int shell_pump_set_data( int argc, char * argv[])
         return 1;
     }
 
-   initialize_pump();
-   int id = strtol( argv[1],NULL,10);
+   int id = strtol( argv[1],NULL,16);
    int data = strtol( argv[2],NULL,10);
    pump_set_data(id, data);
-   make_pump_open(1);
    return 0;
 }
