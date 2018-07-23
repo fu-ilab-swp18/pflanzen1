@@ -24,7 +24,6 @@ static const shell_command_t shell_commands[] = {
     { "h2od", "start h2o server", shell_h2od },
     { "debug", "turn debug prints on and off", shell_debug },
     { "pump_set_data", "Send data to the pump controller", shell_pump_set_data },
-    { "pump_print_table","Print the actual table state", print_table },
     { "h2o_send_data", "send data using the h2o protocol", h2o_send_data_shell },
     { "h2o_miv", "Set measurement interval", h2o_set_measurement_interval_shell },
     { "info", "Print information about the node", shell_info },
@@ -71,18 +70,28 @@ h2op_add_receive_hook(&h2op_debug_hook);
 #ifdef NODE_ROLE_COLLECTOR
     h2op_add_receive_hook(h2op_pump_set_data_hook);
 #endif
-#ifdef NODE_ROLE_SENSOR
+#if defined(NODE_ROLE_SENSOR) || defined(NODE_ROLE_COLLECTOR)
     h2op_add_receive_hook(h2op_measurement_interval_hook);
 #endif
     //TODO maybe we don't always need it?
     h2od_start();
 
     initialize_sensors();
+#ifdef BOARD_SAMR21_XPRO
+    initialize_pump();
+#endif
 
+#if defined(NODE_ROLE_COLLECTOR) || defined(NODE_ROLE_SENSOR)
+#ifdef NODE_ROLE_COLLECTOR
+    // send to ourselves (we need this for the water level check)
+    nodeid_t to = COLLECTOR_NODE_ID;
+#endif
 #ifdef NODE_ROLE_SENSOR
+    nodeid_t to = UPSTREAM_NODE;
+#endif
     thread_create(thread_stack, sizeof(thread_stack),
                   THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_STACKTEST,
-                  sensor_thread, NULL, "sensor_thread");
+                  sensor_thread, (void*) &to, "sensor_thread");
 #endif
 
     char line_buf[SHELL_DEFAULT_BUFSIZE];
