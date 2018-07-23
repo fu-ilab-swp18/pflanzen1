@@ -42,7 +42,7 @@
 //Table to storage sensors data the size of the table depens on the number of sensors
 int table [NUM_SENSORS][3];
 bool pump_is_on = false;
-bool pump_is_empty = false;
+bool pump_is_empty = true;
 
 //For the PID Controller
 int integral =0;
@@ -112,7 +112,11 @@ void water_level_sensor_control (int data)
 		if(pump_is_on){
 			make_pump_close();
 		}
-        puts("Need to be filled");
+        	puts("Need to be filled");
+		pump_is_empty = true;
+	}
+	else{
+		pump_is_empty = false;
 	}
 }
 void add_data_table(int id,int data)
@@ -266,7 +270,7 @@ void pump_set_data(int id, int data)
              else {
 
                 add_data_table(id,data);
-                
+
             }
             //When we got the values of all the sensors we operate with the values
             if(table[NUM_SENSORS-1][0] != 0) {
