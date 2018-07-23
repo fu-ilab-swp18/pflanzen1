@@ -110,6 +110,7 @@ void water_level_sensor_control (int data)
 			make_pump_close();
 		}
         puts("Need to be filled");
+	pump_is_empty = true;
 	}
 	else{
 		pump_is_empty = false;	
