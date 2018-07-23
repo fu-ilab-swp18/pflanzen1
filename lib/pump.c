@@ -62,7 +62,7 @@ void reset_table( int table[][3])
 }
 
 //Function that prints the table with the values just for visual information
-void print_table( int table[][3])
+void print_table(void)
 {
     for(int i=0;i<NUM_SENSORS;i++){
         printf("id: %d value: %d at: %d \n",table[i][0],table[i][1],table[i][2]);
@@ -127,7 +127,7 @@ void add_data_table(int id,int data)
                         table[i][2] = time(NULL);
                         if ( PFLANZEN_DEBUG ) {
                             printf("TableUpdated \n");
-                            print_table(table);
+                            print_table();
                         }
                     }
                 }
@@ -142,7 +142,7 @@ void add_data_table(int id,int data)
                     table[aux][2] = time(NULL);
                     if ( PFLANZEN_DEBUG ) {
                         printf("AddedToTable \n");
-                        print_table(table);
+                        print_table();
                     }
                 }
 }
