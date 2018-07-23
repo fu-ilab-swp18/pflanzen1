@@ -30,7 +30,7 @@
 
 #ifdef BOARD_SAMR21_XPRO
 #define GPIO_POWER_PORT		(PA)
-#define GPIO_POWER_PIN_PUMP		(16)
+#define GPIO_POWER_PIN_PUMP		(18)
 #define GPIO_POWER_PUMP	 	GPIO_PIN(GPIO_POWER_PORT,GPIO_POWER_PIN_PUMP)
 #endif
 
@@ -39,7 +39,7 @@
 //Table to storage sensors data the size of the table depens on the number of sensors
 int table [NUM_SENSORS][3];
 bool pump_is_on = false;
-bool pump_is_empty = false;
+bool pump_is_empty = true;
 
 //For the PID Controller
 int integral =0;
@@ -66,6 +66,8 @@ void print_table( int table[][3])
     }
 }
 void initialize_pump(void){
+    pump_is_on=false;
+    pump_is_empty=true;
 #ifdef BOARD_SAMR21_XPRO
    //Initialize a GPIO that powers the pump
    if(gpio_init(GPIO_POWER_PUMP,GPIO_OUT)==0){
@@ -105,13 +107,19 @@ void make_pump_open(int aux)
 
 void water_level_sensor_control (int data)
 {
-	if(data < HUMIDICITY_LEVEL_ACCEPTED){
-		if(pump_is_on){
-			make_pump_close();
-		}
-        puts("Need to be filled");
+	if(data >= HUMIDICITY_LEVEL_ACCEPTED){
+        pump_is_empty = false;
+        return;
 	}
+    puts("Need to be filled");
+    pump_is_empty = true;
+#ifdef BOARD_SAMR21_XPRO
+    if(pump_is_on){
+        make_pump_close();
+    }
+#endif
 }
+
 void add_data_table(int id,int data)
 {
     bool repeated_data = false;
