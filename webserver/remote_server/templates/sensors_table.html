@@ -1,0 +1,21 @@
+<html>
+<body>
+<table>
+<tr>
+<td>ID</td>
+<td>Humidity</td>
+<td>Temperature</td>
+<td>Time</td>
+</tr>
+{% for sensor in sensors_details %}
+    <tr>
+        <td>{{sensor.sensor_id}}</td>
+        <td>{{sensor.humidity}}</td>
+        <td>{{sensor.temperature}}</td>
+        <td>{{sensor.timestamp}}</td> 
+    </tr>
+{% endfor %}
+</table>
+</body>
+</html>
+

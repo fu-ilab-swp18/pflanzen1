@@ -1,0 +1,22 @@
+<html>
+<head>
+</head>
+<body>
+<h1>
+Pump data
+</h1>
+<table>
+<tr>
+<td>Pump State</td>
+<td>Time</td>
+</tr>
+{% for line in pump_details %}
+    <tr>
+        <td>{{line.state}}</td>
+        <td>{{line.time_stamp}}</td>
+    </tr>
+{% endfor %}
+</table>
+</body>
+</html>
+
