@@ -66,6 +66,11 @@ endif
 NUM_SENSORS ?= 2
 CFLAGS += -DNUM_SENSORS=$(NUM_SENSORS)
 
+USE_RPL ?= 1
+ifeq ($(USE_RPL), 1)
+	CFLAGS += -DUSE_RPL
+endif
+
 # network configuration
 # ---------------------
 

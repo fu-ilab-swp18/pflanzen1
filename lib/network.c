@@ -106,12 +106,14 @@ void add_public_address ( const gnrc_netif_t *netif ) {
 }
 
 void network_init ( bool rpl_root ){
+#ifdef USE_RPL
     rv = gnrc_rpl_init((*gnrc_netif_iter(NULL)).pid); // just use the first if
     if ( rv < 0 ) {
         error(-rv, 0, "Error while initializing RPL");
     } else if (PFLANZEN_DEBUG) {
         puts("RPL initialized.");
     }
+#endif
 
     add_public_address(NULL);
 
@@ -121,12 +123,14 @@ void network_init ( bool rpl_root ){
     ipv6_addr_t myaddr;
     h2op_nodeid_to_addr(NODE_ID, &myaddr);
 
+#ifdef USE_RPL
     rv = (int) gnrc_rpl_root_init(1, &myaddr, false, false);
     if ( rv == 0 ) {
         puts("Error while setting RPL root");
     } else if (PFLANZEN_DEBUG) {
         puts("RPL root set.");
     }
+#endif
 }
 
 
