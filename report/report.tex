@@ -1,0 +1,227 @@
+\documentclass[11pt,paper=a4,parskip=half]{scrartcl}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\newcommand\documenttitle{SWP Internet Communikation: Report}
+\newcommand\pdftitle{\documenttitle}
+
+\usepackage{lmodern}
+\usepackage{mathtools,amssymb,amsthm}
+\usepackage[english]{babel}
+\usepackage[cmyk]{xcolor}
+%\usepackage{tikz}
+%\usepackage{nicefrac}
+\usepackage[margin=2cm,top=3cm,headheight=30pt,voffset=10pt]{geometry}
+\usepackage{setspace}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{verbatim}
+%\usepackage[european]{circuitikz}
+%\usepackage{siunitx}
+\usepackage{placeins} % \FloatBarrier
+\usepackage{float}
+%\usepackage{dcolumn}
+\usepackage{tabu}
+\usepackage{booktabs}
+\usepackage[inline]{enumitem}
+\usepackage{microtype}
+\usepackage[bf]{caption}
+\usepackage[pdftex]{adjustbox}
+\usepackage[pdftitle={\pdftitle},pdfborder={0 0 0}]{hyperref}
+\usepackage[fixlanguage]{babelbib}
+\usepackage{xfrac}
+\usepackage{etoolbox}
+
+%%%%  TEXT  %%%%
+
+% text formatting
+\addtokomafont{disposition}{\rmfamily}
+\addtokomafont{descriptionlabel}{\rmfamily\bfseries}
+\setcounter{secnumdepth}{0} % no heading numeration
+\RedeclareSectionCommand[beforeskip=.5\baselineskip,afterskip=.25\baselineskip]{subsubsection}
+\RedeclareSectionCommand[beforeskip=.3\baselineskip]{paragraph}
+\captionsetup{format=plain}
+
+% helpers
+\newcommand\http[1]{\href{http://#1}{#1}}
+\newcommand\https[1]{\href{https://#1}{#1}}
+
+\makeatletter
+% fix spacing within minipage  (https://tex.stackexchange.com/a/141123/73880)
+\newlength{\currentparskip}
+\setlength{\currentparskip}{\parskip}
+\newcommand{\@minipagerestore}{\setlength{\parskip}{\currentparskip}}
+% fix spacing around verbatim  (https://tex.stackexchange.com/a/43336/73880)
+\preto{\@verbatim}{\topsep=0pt \partopsep=0pt }
+\makeatother
+
+%%%%  MATH  %%%%
+
+\DeclareCollectionInstance{betterkern}{xfrac}{mathdefault}{math}{slash-right-mkern=-2.5mu}  \UseCollection{xfrac}{betterkern}
+\DeclareSymbolFont{largesymbols}{OMX}{cmex}{m}{n} % widehat tex.sx/q/219353/73880
+
+% fix spacing around \left/\right (https://tex.stackexchange.com/a/2610/73880)
+\let\originalleft\left
+\let\originalright\right
+\renewcommand{\left}{\mathopen{}\mathclose\bgroup\originalleft}
+\renewcommand{\right}{\aftergroup\egroup\originalright}
+
+% units
+\makeatletter\@ifpackageloaded{siunitx}{
+\sisetup{per-mode=fraction,fraction-function=\tfrac,
+         output-decimal-marker={,},
+         exponent-product=\mathop{\!\cdot\!},
+         inter-unit-product=\mathop{\!\cdot\!},
+         table-number-alignment=right}
+\newcommand\IS[2]{\SI{#2}{#1}}
+\newcommand\s{\IS{\second}}
+\newcommand\mm{\IS{\milli\meter}}
+\newcommand\nr{\IS{}}
+}{}\makeatother
+
+%%%%  PAGE  %%%%
+
+\pagestyle{fancy} \fancyhf{}
+\chead{Garcia\,·\,Ihrig\,·\,Sigler\,·\,Zaboub  \hfill
+    \textbf{\documenttitle}  \hfill
+    page \thepage\,/\,\pageref*{LastPage}}
+
+
+
+\begin{document}
+
+
+\thispagestyle{empty}
+
+
+\begin{center}
+
+\begin{spacing}{1.2}
+\textbf{ \LARGE
+Albert Garcia \\
+Jannis Ihrig \\
+Marian Sigler \\
+Manar Zaboub \\
+}
+
+\end{spacing}\vspace{2.5em}
+
+
+\textbf{ \Huge Software Project \\ \emph{Internet Communication} \\\vspace{0.8em}
+Final Report}
+\vspace{2.5em}
+
+\begin{spacing}{1}
+\Large
+
+FU Berlin, Summer Term 2018
+
+Prof. Dr. Matthias Wählisch
+\end{spacing}
+\end{center}
+
+\vspace{10mm}
+
+
+\setcounter{tocdepth}{2}
+\tableofcontents
+
+\newpage
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Use Case}
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Implementation}
+
+
+
+%%%%%%%%%%
+\subsection{Sensors}
+
+
+
+%%%%%%%%%%
+\subsection{Network}
+
+
+
+%%%%%%%%%%
+\subsection{H2O Protocol}
+
+
+
+%%%%%%%%%%
+\subsection{Pump Control}
+
+
+
+%%%%%%%%%%
+\subsection{Gateway}
+
+
+
+%%%%%%%%%%
+\subsection{Data Presentation}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusion}
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
