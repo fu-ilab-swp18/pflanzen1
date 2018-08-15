@@ -3,3 +3,9 @@ Tutorials/
 Raspi/msgs.txt
 
 *.swp
+
+#ignore latex intermediate files
+*.aux
+*.log
+*.out
+*.toc
