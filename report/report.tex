@@ -170,8 +170,62 @@ Prof. Dr. Matthias Wählisch
 %%%%%%%%%%
 \subsection{Pump Control}
 
+The Pump Control is the set of algorithms that manage the water pump.
+In this subsection we present the functions that are being used and the reason of the developing of these functions.
 
+First of all we have to present the design of the pump controller, in this case we have implemented a threshold system which allows the controller to decide the next action of the pump. As we have two types of sensors (the one that controls the water level of the pump and the rest) there are two types of thresholds with different values that are defined after a couple of practical tests. 
 
+Once the design is presented we can start to describe the different functions that are used in the pump control.
+
+Function: reset_table( int table[][])
+
+This function  fills the bidimensional array of 0 and also set to 0 different variables.
+
+The function is used when the pump changes of state(open or close) or when all the normal sensors (the ones not in water) had sended data.
+
+Function: print_table (int table[][])
+
+This function prints in the console the ID, the last value received and the time when the value was received of each sensor stored in the table.
+The function is used to control the correct functioning of the table and of the algorithm and to control that the pump is receiving the correct values of the different sensors.
+It is a purely informative function.
+
+Function: initialize_pump()
+
+This function is used to initialize the GPIO that allows us to control the pump through the samr21 board.
+
+The function calls some GPIO functions needed to initialize the GPIO and sets it low because we assume that when we start the system, the plants do not need water.
+
+Function: make_pump_close()
+
+This function closes the pump, when the algorithm calls this function had already checked that the plants have enough water and the pump is still on or the opening time has been exceeded.
+
+To close the pump the function sets the GPIO to low using the GPIO function gpio_clear.
+
+Function: make_pump_open(int aux)
+
+This function opens the pump, when the algorithm calls this functions had already cheacked that the plants need water and the pump is closed. The pump is opened for a concrete amount of time defined by the variable aux and then calls the function make_pump_close() to close the pump.
+
+To open the pump the function sets the GPIO to high using the GPIO function gpio_set.
+
+Function: water_level_sensor_control (int data)
+
+This function is used to avoid the malfunctioning of the pump caused by the lack of water. If the data sended by the water sensor indicates that the water level is under a concrete threshold the function calls the function make_pump_close.
+
+Function: add_data_table(int id, int data)
+
+This function add to the table the data recieved from the sensors. First of all the function checks if there is existing data of this sensor already in the table, if they exist the function updates the value, if not it add a new line to the table with the new data and the actual time; finally the function calls print_table to show the new state of the table.
+
+Function: add_pid_controller(int data)
+
+This function is used to adjust the time that the pump is open, to determine that time a set of algorithms are used that take into account the rest of the values received from the other sensors and depending on the distance between them and with the thresholds, the opening time of the pump is defined.
+
+Function add_set_data(int id,int data)
+
+This function decides if the pump should open or not, in order to do that it compares the values sended from the sensors with a set of thresholds and decides to call make_pump_open, make_pump_close or wait for more values of more sensors, it also calls the function that controls the water level sensor if it is necessary.
+
+Function: shell_pump_set_data( int argc, char * argv[])
+
+This function is used to control the correct functioning of the pump controller algorithm and allows the developers to call the functions without sending real data from the sensors but sending it from a console.
 %%%%%%%%%%
 \subsection{Gateway}
 
