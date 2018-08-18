@@ -354,14 +354,34 @@ Function: shell\_pump\_set\_data( int argc, char * argv[])
 
 This function is used to control the correct functioning of the pump controller algorithm and allows the developers to call the functions without sending real data from the sensors but sending it from a console.
 %%%%%%%%%%
-\subsection{Gateway}
+\subsection{Gateway}  
 
+The watering system prototype functions autonomously without the intrude of human or any 3rd Party service, but it is a requirement to monitor the system, because with processing the data an error can be predicted and fatal consequences can be avoided with taking the right measures. Among other control functions in the system monitoring requires remote communications.
+Connecting with the sensors through the Internet can be achieved using a gateway that forwards and transfer all packets from the sensors to some ip address outside the internal network of the sensors. Serving as a gateway  the node needs not to be placed outdoor or besides the sensors, it neither have to be compact, so using a high power programmer in this case is possible, because there will be only gateway at the end. For this reason the Raspberry Pi would perform a good job in our project, and well written documentations of using lowpan module with Raspberry Pi are being provided by the RIOT community. Following the instructions included in RIOT git \cite{lowpan} enables having a functioning lowpan transceiver on the Raspberry pi without any problems. \\
+We began programming the pi from scratch using an erased SD card, in briefly our setup has included the following:
+\begin{enumerate}
+	\item Setup Raspian OS on the SD card, this is a UNIX-like operating system made for the Raspberry pi.
+	\item SSH (Secured Shell Host  openBSD) is a program for the communications between computers on different networks using the shell layer, it is installed by default in Raspian but using it requires enabling flags in the configurations of OS.
+	\item Setup the lowpan module and connect it to the raspberry pi, it worked without the need to reconfigure the kernel of Raspian. 
+	\item Setup IPv6 for the lowpan interface and make sure the communications are working with pinging the rest of network.
+\end{enumerate}
 
+ after debugging and making sure that the communications on the physical layer are working properly and that the rest of network is communicating with the pi per lowpan, we setup a static IPv6 for the interfaces, whenever Raspian boots it uses that address. 
+ 
+ There are additional configurations should be done to the network layer in order to encapsulate the IPv6 packets and forwards them to an IP address outside the watering system's network. Ip route provides management tools for manipulating any of the routing tables, it can be used to forward the packets directly with working only on the network layer, it is mentioned in the documentations of RIOT for setting up the lowpan and raspberry pi, but the inter-polarity challenge for connecting the sensors with the internet cannot be overcame in our implementation without processing the packets on the application layer before forwarding them, therefore we have written a python program running in an endless loop to capture all the incoming packets to the raspberry pi, interpret and convert them to the required protocol (HTTP), and finally forwards the packets to a predefined (Webserver) address. The only function for the gateway at this time is monitoring the incoming humidity and temperature data and finally presenting them on a web server, the running python program performs this one specific translation of protocol.
 
-%%%%%%%%%%
-\subsection{Data Presentation}
+\subsection{Data presentation}
 
+The sensors send periodically new data about humidity and temperature, the values need to be saved in a central database and presented to the user in proper way for reading.
+One way for reading the data from the sensors remotely is to have a running service providing access to the readers and the writers which are in our case the user (web browser) and the watering system (Sensor). An available option is using a web server running with a static ip address, and an apache service to handle the incoming requests/responses of the clients. For testing the project we configured a private apache2 web server using ssh communication (as with raspberry pi). We decided to use python add-on called django to handle the HTTP requests, the apache module named mod\_wsgi embeds Python applications within the server and allow them to communicate through the Python WSGI interface. Django is a free and open source web application framework, written in Python. A web framework is a set of components that helps you manage a website faster and easier. Django provides easy mechanisms to handle html templates. Moreover processing and reading predefined html files using django is easier in compare to the traditional web languages e.g "PHP", because as a webframework django provides the complete structure for building a website.  
 
+We implemented an HTTP API for reading and writing the humidity and temperature values of the sensors.
+ 
+Functions in our HTTP API include get and set sensor data.\\The data can be written by the sensors function http://IP.ADDRESS:PORT:/set\_sensor\_data .
+Finally the data of the sensors is presented in an HTML table designed with boostrap css, the table rows include data presenting in sqllite database, we used django template language for loading html page dynamically.\\The database where all sensors data is located can be accessed using the get function:
+http://IP.ADDRESS:PORT:/get\_sensor\_data .
+
+In our web server we didn't have to reach the complete RESTful implementation because our interface consist only of two functions, internally both of the functions for setting and getting the data use HTTP get request
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusion}
