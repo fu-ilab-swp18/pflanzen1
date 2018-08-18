@@ -31,7 +31,8 @@
 \usepackage[fixlanguage]{babelbib}
 \usepackage{xfrac}
 \usepackage{etoolbox}
-\usepackage{pdfpages}
+% \usepackage{pdfpages}
+% \usepackage{natbib}
 
 %%%%  TEXT  %%%%
 
@@ -143,13 +144,25 @@ Prof. Dr. Matthias Wählisch
 \section{Use Case}
 \label{sec:usecase}
 
-  In the following section we describe the scope of application for which our application was build for.
+  In the following section we describe the scope of application for which our
+  application was build for. We deduced it from the more general task of
+  building a IOT application for planter pots given at the start of the course.
 
-  We assume several seperate planter pots are given. These can have some distance between each other but are located in one general location.
+  We assume several seperate planter pots are given. These can have some
+  distance between each other but are located in one general location.
 
-  The application to build should allow to monitor the humitidy of each single planter pot separately and remotely, e.g. from a computer indoors. The parts of the system responsible for humidity monitoring, i.e. sensor nodes, should be easy to install, require low maintenance and so be able to remain with the planter pots or inside the soil for long periods of time. As an extra prerequisite specific to the course, we were asked to use the Atmel \textit{SAM R21 Xplained Pro} MCU (SAMR21 in the following) as hardware for the sensor nodes.  Additionally, these Atmel MCUs should run \textit{RIOT} as their operating system.
+  The application to build should allow to monitor the humitidy of each single
+  planter pot separately and remotely, e.g. from a computer indoors. The parts
+  of the system responsible for humidity monitoring, i.e. sensor nodes, should
+  be easy to install, require low maintenance and so be able to remain with the
+  planter pots or inside the soil for long periods of time. As an extra
+  prerequisite specific to the course, we were asked to use the Atmel
+  \textit{SAM R21 Xplained Pro} MCU (SAMR21 in the following) as hardware for
+  the sensor nodes.  Additionally, these Atmel MCUs should run \textit{RIOT} as
+  their operating system.
 
-  Additinally to humidity monitoring, the system should take care of watering the planter pots automatically.
+  Additinally to humidity monitoring, the system should take care of watering
+  the planter pots automatically.
 
 \section{Planning}
 \subsection{Planned Solution}
@@ -180,52 +193,96 @@ Prof. Dr. Matthias Wählisch
   WiFi based on IEEE802.11. A web frontend should then allow to monitor all
   sensor data remotely.
 
-\subsection{Milestones}
+  \begin{figure}[h]
+    \centering
+    % \def\svgwidth{\columnwidth}
+    \includegraphics[scale=0.4]{schema}
+	  \caption{Overview of the general system architecture resulting from
+	  the analysis of the given task described in the previous section.}
+    \label{fig:schema}
+  \end{figure}
 
+\subsection{Milestones}
+  We decided to set 3 Milestones for the project as follows:
+
+  \begin{itemize}
+    \item[M1:]
+      \begin{itemize}
+	\item Implementation of the basic network functionality of the sensor
+		nodes.
+	\item Selection and basic integration of the soil moisture sensor for
+		the sensor nodes.
+	\item Basic webserver working on mock sensor data.
+	\item Basic pump control algorithm working on mock sensor data.
+      \end{itemize}
+    \item[M2:]
+      \begin{itemize}
+	\item Improved integration of sensors.
+	\item Improved network stack.
+	\item Integration of pump hardware.
+	\item Improved pump control algorithm.
+	\item Gateway node connecting pump node to webserver.
+      \end{itemize}
+    \item[M3:]
+      \begin{itemize}
+	\item Full integration of sensor nodes, pump control node, gateway and
+		webserver / web interface.
+	\item Watering based on real sensor data.
+	\item Multi-hop routing for sensor nodes.
+      \end{itemize}
+  \end{itemize}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Implementation}
 
-\subsection{Planning and General Overview}
-
-The general plan for the system architecture was derived in the first two weeks from the given task described in the section \textit{Use Case}.
-
-sensor nodes that measure humidity (and possibly other sensor data) and send it to one central collector node. Use SAMR21. Extend with a moisture sensor to measure soil humidity. Also possible to send temp over network. Also generally possible to use the ... PhyNode that has an extended array of sensors.
-
-One main factor were the given SAMR21 MCUs and their capability to comminicate via 6LoWPAN over IEEE 802.15.4. As multiple sensor nodes would be distributed over different planter pots,
-
-multihop
-
-One central location that acts as a gateway to the internet. This node needs a ethernet or regular wifi connection. Therefore not SAMR21 but raspberry pi with a 6LoWPAN usb dongle.
-
-One webserver that serves the status (humidity) of the sensor nodes.
-
-to be able to water, node that controls some water supply. To simplify the case, we assumed one node to controle a pump that would water all plants at the same time.
-
-As pump controller needs to monitor all sensor nodes anyway to make the decision if the pump should be opened, the aggregation of all sensor data falls together with the node that controls the pump.
-
-Planned system split into different components
-
-Split into 3 Milestones
-
-
-
-  The use of the \textit{samr21-xrpo} was given as an additional prerequisite.
-  \begin{figure}[h]
-    \centering
-    % \def\svgwidth{\columnwidth}
-    \includegraphics[scale=0.3]{schema}
-	  \caption{Overview of the general system architecture resulting from the analysis of the given task described in the previous section.}
-    \label{fig:schema}
-  \end{figure}
-
-
 %%%%%%%%%%
 \subsection{Sensors}
 \label{sec:sensors}
+  The \textit{SEN0114} \cite{SEN} sensor was selected for the sentral task of collecting
+  data on soil moisture. This was decided due to the following reasons:
 
-The central task of the
+  \begin{itemize}
+    \item There was previous experience with integrating the sensor with the
+	    SAMR21 and RIOT (see \cite{watrli}).
+    \item The intrigration via RIOT's ADC interface \cite{riot_adc} seemed
+	    simple.
+    \item The sensor uses a gold plating which leads good resistance against
+	    corrosion and provides longlivity.
+  \end{itemize}
+
+  A basic integration of the sensor was achieved during M1. To do so, we
+  connected the analog output of the sensor with the SAMR21's GPIO PA06 which
+  is one of the default inputs for RIOT's ADC interface. We used GPIO PA13 to
+  supply power but only switched it on during measurements to further reduce
+  the risk of corroding the sensor. This allowed us to read sensor data,
+  although it still was uncalibrated.
+
+  As only few SAMR21 were available for the project and to extend the selection
+  of sensors, the PhyNode's air humidity and temperature sensors were also
+  integrated with the sensor nodes software.
+
+  During M2, a unified interface for all sensors, including mock sensor data
+  for RIOT's 'native' platform was implemented.
+
+  Unexpectedly, it took until the end of M3 to collect sensible and calibrated
+  sensor data with the SEN0114. This was due to the limited ADC interface of
+  RIOT and it's lacking documentation on how to modify te used reference
+  voltage. By default, RIOT's ADC interface uses a reference voltage of 1V.
+  Experiments with the sensor showed signals between 0V and 1.6V. We therefore
+  hat to set the reference voltage to 2V, which can currently only be achieved
+  by modifying the RIOT sources.
+
+
+
+  \begin{figure}[h]
+    \centering
+    % \def\svgwidth{\columnwidth}
+    \includegraphics[scale=0.16]{stack-sensor}
+	  \caption{Implementation of the sensor node. It shows the sensor
+	  integration and the implemented network stack.}
+    \label{fig:schema}
+  \end{figure}
 
 %%%%%%%%%%
 \subsection{Network}
@@ -314,38 +371,8 @@ This function is used to control the correct functioning of the pump controller 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+\newpage
+\nocite{*}
+\bibliography{report}
+\bibliographystyle{plain}
 \end{document}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
