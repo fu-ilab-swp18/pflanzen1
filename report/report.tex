@@ -31,6 +31,7 @@
 \usepackage[fixlanguage]{babelbib}
 \usepackage{xfrac}
 \usepackage{etoolbox}
+\usepackage{pdfpages}
 
 %%%%  TEXT  %%%%
 
@@ -138,24 +139,93 @@ Prof. Dr. Matthias Wählisch
 
 
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Use Case}
+\label{sec:usecase}
 
+  In the following section we describe the scope of application for which our application was build for.
 
+  We assume several seperate planter pots are given. These can have some distance between each other but are located in one general location.
 
+  The application to build should allow to monitor the humitidy of each single planter pot separately and remotely, e.g. from a computer indoors. The parts of the system responsible for humidity monitoring, i.e. sensor nodes, should be easy to install, require low maintenance and so be able to remain with the planter pots or inside the soil for long periods of time. As an extra prerequisite specific to the course, we were asked to use the Atmel \textit{SAM R21 Xplained Pro} MCU (SAMR21 in the following) as hardware for the sensor nodes.  Additionally, these Atmel MCUs should run \textit{RIOT} as their operating system.
+
+  Additinally to humidity monitoring, the system should take care of watering the planter pots automatically.
+
+\section{Planning}
+\subsection{Planned Solution}
+  \paragraph{Sensor and pump control nodes} To measure humidity of the single
+  planter pots, we decided to use the SAMR21 MCUs as sensor nodes which should
+  run the RIOT operating system. These should therefore each be equipped with
+  an external humidity sensor to measure soil moisture. We regarded the
+  integration of addidional sensors as temperature, light or air humidity
+  sensors as desirable but not a central part of the project. We also planned
+  for the possibility of multi-hop routing between the sensor nodes to increase
+  the maximum range in which they can be placed.
+
+  Additinally to monitoring purposes, one central goal described in the section
+  \textit{Use Case} was to water the planter pots. We therefore decided  to
+  introduce an additinal node which should collect all sensor data and control
+  a water pump. When turned on, the pump should water all plants collectively
+  to simplify the setup.
+
+  The decision of using the SAMR21 as sensor nodes and pump controller had a
+  big impact on the planned system architecture, as it has a low power
+  consumption and offers wireless connectivity via 6LoWPAN over IEEE802.15.4.
+  Together, this should increase battery lifetime and reduce the need for
+  maintenance, as was one of our set goals.
+
+  \paragraph{Gateway node and web frontend} Another node should receive data
+  from the pump control node and publish it to a web server under our control.
+  It therefore had to be able to connect to the local network via Ethernet or
+  WiFi based on IEEE802.11. A web frontend should then allow to monitor all
+  sensor data remotely.
+
+\subsection{Milestones}
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Implementation}
 
+\subsection{Planning and General Overview}
+
+The general plan for the system architecture was derived in the first two weeks from the given task described in the section \textit{Use Case}.
+
+sensor nodes that measure humidity (and possibly other sensor data) and send it to one central collector node. Use SAMR21. Extend with a moisture sensor to measure soil humidity. Also possible to send temp over network. Also generally possible to use the ... PhyNode that has an extended array of sensors.
+
+One main factor were the given SAMR21 MCUs and their capability to comminicate via 6LoWPAN over IEEE 802.15.4. As multiple sensor nodes would be distributed over different planter pots,
+
+multihop
+
+One central location that acts as a gateway to the internet. This node needs a ethernet or regular wifi connection. Therefore not SAMR21 but raspberry pi with a 6LoWPAN usb dongle.
+
+One webserver that serves the status (humidity) of the sensor nodes.
+
+to be able to water, node that controls some water supply. To simplify the case, we assumed one node to controle a pump that would water all plants at the same time.
+
+As pump controller needs to monitor all sensor nodes anyway to make the decision if the pump should be opened, the aggregation of all sensor data falls together with the node that controls the pump.
+
+Planned system split into different components
+
+Split into 3 Milestones
+
+
+
+  The use of the \textit{samr21-xrpo} was given as an additional prerequisite.
+  \begin{figure}[h]
+    \centering
+    % \def\svgwidth{\columnwidth}
+    \includegraphics[scale=0.3]{schema}
+	  \caption{Overview of the general system architecture resulting from the analysis of the given task described in the previous section.}
+    \label{fig:schema}
+  \end{figure}
 
 
 %%%%%%%%%%
 \subsection{Sensors}
+\label{sec:sensors}
 
-
+The central task of the
 
 %%%%%%%%%%
 \subsection{Network}
