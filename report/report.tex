@@ -286,11 +286,76 @@ Prof. Dr. Matthias Wählisch
 
 %%%%%%%%%%
 \subsection{Network}
+The network layout we planned was based on the following assumptions:
+\begin{enumerate}
+  \item The sensor nodes are connected via 802.15.4, they should be able to run from a battery or solar cell. Some of them may need to be positioned with some distance from the house.
+  \item As the pump needs a lot of power anyways, the pump controller node cannot run from battery but needs a power adapter connected to a wall socket. Water for the plants typically is also best available near a house, no matter if it is from a tap or from a tank storing rain water from the roofs.
+  \item To communicate data to a web server, we need a gateway that translates from the IOT 15.4 network to TCP/IP internet.
+\end{enumerate}
+
+From (2) it follows that we can require the pump to be near a house. We can use this to put the gateway required by (3) inside the house, where it has connection both to a wifi router and the pump control node. Further, (1) dictates that we use hop-to-hop communication between the sensor and pump control nodes, because some of the nodes might be positioned too far away from the house. As the pump control needs to know the sensor data of all sensors, it makes sense to send all data to it and have it forward everything to the gateway. Because of this central role we are calling it the \emph{controller} node. These considerations lead to the network layout shown in Figure~\ref{fig:schema}.
+
+As the 802.15.4 network is not directly connected to the internet, we decided to use a hard-configured unique local network from the fc00::/8\cite address range{rfc4193}. This also allows automatic hot-plug configuration. In contrast to link-local addresses (fe80::/10), this allows us to use hardcoded, fixed addresses for some special nodes, namely the controller and the gateway.
+
+Every node has a 16 bit Node ID. In the case of the controller and the gateway, those are hardcoded, for the sensor nodes one is generated deterministically from hardware properties (in fact, we use the least significant 16 bits of the interface identifier), but can also be assigned at compile time if desired. Each node's unique local address is deduced from this Node ID.
+
+For the hop-to-hop network, we use a RPL tree, rooted at the controller node. However it is also possible to explicitly define a node's upstream node, should this prove more reliable. The upstream node, in turn, forwards the data on the application level to its own upstream node. This forwarding mode in fact is a remainder from the early development phase when we had not set up RPL yet, but we decided to keep it to increase flexibility.
 
 
 
 %%%%%%%%%%
 \subsection{H2O Protocol}
+When starting the project, we decided to implement our own simple UDP-based protocol, dubbed h2o protocol, in order to be able to quickly start the development of the other components without first evaluating different existing protocols. We had planned to possibly switch to an existing protocol (for example, CoAP) later, but in the end, our little protocol turned out flexible enough so we kept it. For example, adding the \verb`set measurement interval` message type (see below) and the associated hooks could be done easily in a few minutes and lines of code. Still, if this was a longer ongoing project, the extra maintenance overhead caused by maintaining our own protocol would probably justify a migration.
+
+\subsubsection{Header Format}
+
+The h2o protocol is designed to run on udp. Packages are very small to allow it to run on 802.15.4 which has a 127 byte payload limit. The package header is as follows (all offsets and lengths measured in bytes). See the file \verb`extra/protokoll` for details (such as byte order and failure behavior).
+
+\begin{tabu*}{X[1,l]X[1.2,l]X[4,l]X[10,l]}
+\toprule  \rowfont[l]{\bfseries}
+Offset & Length & Type & Description \\
+\midrule
+0 & 1 & \verb`uint8_t` & magic number (\texttt{0xac}) \\
+1 & 1 & \verb`uint8_t` & version number (\texttt{0x01}) \\
+2 & 1 & \verb`uint8_t` & packet length (including header) \\
+3 & 1 & \verb`uint8_t` & message type (see below) \\
+4 & 2 & \texttt{nodeid\_t} (\texttt{typedef~uint16\_t}) & node ID of the node the package originates from \\
+6 & 2 & \verb`uint16_t` & Packet checksum \\
+8 & \dots & \verb`uint8_t[]` & Data (depends on the message type, see below) \\
+\bottomrule
+\end{tabu*}
+
+The node ID field is required to conserve the data's original author after the packet has been forwarded.
+
+The message type consists of a supertype (most significant four bits) that defines the type of message and associated behavior (for example, the controller only forwards \texttt{DATA MESSAGE} packets to the gateway); and a subtype defining the exact contents.
+
+{\center
+\begin{tabu*}{>{\ttfamily}l>{\ttfamily}rll}
+\toprule  \rowfont{\bfseries}
+\multicolumn2{c}{Type} & Description & Data Field Contents \\
+\midrule
+0x1? &      & DATA MESSAGE & \\
+     & 0x11 & temperature & \verb`int16_t`, degrees celsius \\
+     & 0x12 & humidity & \verb`int16_t`, 0 to 100 \\
+0x2? &      & DATA REQUEST (reserved) & \\
+0x3? &      & CONFIGURATION & \\
+     & 0x31 & set measurement interval & \verb`uint32_t`, microseconds \\
+0x9? &      & WARN (currently unused) & \\
+0xA? &      & INFO (currently unused) & \\
+\end{tabu*}}
+
+
+\subsubsection{Server and Client Implementation}
+\textit{\textrightarrow~ See \texttt{lib/network.c} for details.}
+
+Receiving is implemented in a very flexible way. The server runs in the background. It deals with basic packet parsing (for example, version and checksum verification), but does nothing more.
+
+Functionality is implemented via hooks that can be registered dynamically (via the \texttt{h2op\_\allowbreak add\_\allowbreak receive\_\allowbreak hook} and \texttt{h2op\_\allowbreak del\_\allowbreak receive\_\allowbreak hook}) functions). This is how we configure different behavior for different node types, for example, only the controller node needs to pass sensor data to the pump control module. Each registered hook is run for every received packet, the hooks then check whether the packet is of the type they are interested in and acts accordingly. Internal behavior, such as the debugging of incoming packets, is also implemented as a hook.
+
+To make the implementation more coherent, we also use this interface for internal communication within a node, for example for communicating the pump bucket's fill level to the pump controller.
+
+
+Sending is trivial, it is implemented via the \texttt{h2op\_\allowbreak send} function that gets passed all the variable header fields and a pointer to the data. \texttt{h2op\_\allowbreak send} then constructs the packet, calculates the checksum and sends the packet. Because this is quite quick, it happens within the caller thread.
 
 
 
@@ -395,4 +460,5 @@ In our web server we didn't have to reach the complete RESTful implementation be
 \nocite{*}
 \bibliography{report}
 \bibliographystyle{plain}
+\addcontentsline{toc}{section}{References}
 \end{document}
