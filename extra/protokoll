@@ -26,7 +26,7 @@ Header format
 
 03  1   Message Type
         most significant four bits: supertype
-        least significant vier bits: subtype
+        least significant four bits: subtype
             0x1? DATA MESSAGE
                 0x11 temperature
                 0x12 humidity
@@ -64,4 +64,4 @@ Data Format
 |   |   /-- Value
 11  0   Temperature (signed 16bit integer)
 12  0   Humidity (signed 16bit integer)
-31  0   interval in seconds (unsigned 32 bit integer)
+31  0   interval in microseconds (unsigned 32 bit integer)
