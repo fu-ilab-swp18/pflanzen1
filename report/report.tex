@@ -106,7 +106,7 @@ Marian Sigler \\
 Manar Zaboub \\
 }
 
-\end{spacing}\vspace{2.5em}
+\end{spacing}\vspace{1.5em}
 
 
 \textbf{ \Huge Software Project \\ \emph{Internet Communication} \\\vspace{0.8em}
@@ -269,18 +269,18 @@ Prof. Dr. Matthias Wählisch
 
   Unexpectedly, it took until the end of M3 to collect sensible and calibrated
   sensor data with the SEN0114. This was due to the limited ADC interface of
-  RIOT and it's lacking documentation on how to modify the used reference
-  voltage. By default, RIOT's ADC interface uses a reference voltage of 1V.
-  Experiments with the sensor showed signals between 0V and 1.6V. We therefore
-  hat to set the reference voltage to 2V, which can currently only be achieved
-  by modifying the RIOT sources.
+  RIOT and its lacking documentation on how to modify the used reference
+  voltage. By default, RIOT's ADC interface uses a reference voltage of 1\,V.
+  Experiments with the sensor showed signals between 0\,V and 1.6\,V. We therefore
+  hat to set the reference voltage to 2\,V, which can currently only be achieved
+  by modifying the RIOT sources. We therefore had to fork the RIOT code.
 
 
 
   \begin{figure}[h]
     \centering
     % \def\svgwidth{\columnwidth}
-    \includegraphics[scale=0.16]{stack-sensor}
+    \includegraphics[width=\textwidth]{stack-sensor}
 	  \caption{Implementation of the sensor node. It shows the sensor
 	  integration and the implemented network stack.}
     \label{fig:stack_sensor}
@@ -290,7 +290,7 @@ Prof. Dr. Matthias Wählisch
 \subsection{Network}
 The network layout we planned was based on the following assumptions:
 \begin{enumerate}
-  \item The sensor nodes are connected via 802.15.4, they should be able to run
+  \item The sensor nodes are connected via IEEE 802.15.4, they should be able to run
 	from a battery or solar cell. Some of them may need to be positioned
 	with some distance from the house.
   \item As the pump needs a lot of power anyways, the pump controller node
@@ -302,8 +302,8 @@ The network layout we planned was based on the following assumptions:
 	from the IOT 15.4 network to TCP/IP internet.
 \end{enumerate}
 
-From (2) it follows that we can require the pump to be near a house. We can use
-this to put the gateway required by (3) inside the house, where it has
+From (2) it follows that we can require the pump to be near a house. This means
+we can put the gateway required by (3) inside the house, where it has
 connection both to a WIFI router and the pump control node. Further, (1)
 dictates that we use hop-to-hop communication between the sensor and pump
 control nodes, because some of the nodes might be positioned too far away from
@@ -314,8 +314,9 @@ node. These considerations lead to the network layout shown in
 Figure~\ref{fig:schema}.
 
 As the 802.15.4 network is not directly connected to the internet, we decided
-to use a hard-configured unique local network from the fc00::/8\cite address
-range{rfc4193}. This also allows automatic hot-plug configuration. In contrast
+to use a hard-configured unique local network from the fc00::/8 address
+range\cite{rfc4193}. This also allows automatic hot-plug configuration of
+just a sensor and a controller, without an internet connection. In contrast
 to link-local addresses (fe80::/10), this allows us to use hardcoded, fixed
 addresses for some special nodes, namely the controller and the gateway.
 
@@ -349,7 +350,7 @@ probably justify a migration.
 
 \subsubsection{Header Format}
 
-The h2o protocol is designed to run on udp. Packages are very small to allow it
+The h2o protocol is designed to run on UDP. Packages are very small to allow it
 to run on 802.15.4 which has a 127 byte payload limit. The package header is as
 follows (all offsets and lengths measured in bytes). See the file
 \verb`extra/protokoll` for details (such as byte order and failure behavior).
@@ -376,20 +377,19 @@ defines the type of message and associated behavior (for example, the
 controller only forwards \texttt{DATA MESSAGE} packets to the gateway); and a
 subtype defining the exact contents.
 
-{\center
 \begin{tabu*}{>{\ttfamily}l>{\ttfamily}rll}
 \toprule  \rowfont{\bfseries}
 \multicolumn2{c}{Type} & Description & Data Field Contents \\
 \midrule
 0x1? &      & DATA MESSAGE & \\
-     & 0x11 & temperature & \verb`int16_t`, degrees celsius \\
+     & 0x11 & temperature & \verb`int16_t`, degrees Celsius \\
      & 0x12 & humidity & \verb`int16_t`, 0 to 100 \\
 0x2? &      & DATA REQUEST (reserved) & \\
 0x3? &      & CONFIGURATION & \\
      & 0x31 & set measurement interval & \verb`uint32_t`, microseconds \\
 0x9? &      & WARN (currently unused) & \\
 0xA? &      & INFO (currently unused) & \\
-\end{tabu*}}
+\end{tabu*}
 
 
 \subsubsection{Server and Client Implementation}
@@ -434,17 +434,19 @@ controls the water level of the pump and the rest) there are two types of
 thresholds with different values that are defined after a couple of practical
 tests.
 
+The sensor's data is stored in an array (dubbed \emph{table} in the following), stored globally.
+
 Once the design is presented we can start to describe the different functions
 that are used in the pump control.
 
-Function: reset\_table( int table[~][~])
+\subsubsection{Function \texttt{reset\_table( int table[~][~])}}
 
 This function  fills the bidimensional array of 0 and also set to 0 different variables.
 
 The function is used when the pump changes the state(open or close) or when all
 the normal sensors (the ones not in water) had sent data.
 
-Function: print\_table (int table[~][~])
+\subsubsection{Function \texttt{print\_table (int table[~][~])}}
 
 This function prints in the console the ID, the last value received and the
 time when the value was received of each sensor stored in the table.
@@ -453,7 +455,7 @@ algorithm and to control that the pump is receiving the correct values of the
 different sensors.
 It is a purely informative function.
 
-Function: initialize\_pump()
+\subsubsection{Function \texttt{initialize\_pump()}}
 
 This function is used to initialize the GPIO that allows us to control the pump
 through the samr21 board.
@@ -462,7 +464,7 @@ The function calls some GPIO functions needed to initialize the GPIO and sets
 it low because we assume that when we start the system, the plants do not need
 water.
 
-Function: make\_pump\_close()
+\subsubsection{Function \texttt{make\_pump\_close()}}
 
 This function closes the pump, when the algorithm calls this function had
 already checked that the plants have enough water and the pump is still on or
@@ -471,52 +473,52 @@ the opening time has been exceeded.
 To close the pump the function sets the GPIO to low using the GPIO function
 gpio\_clear.
 
-Function: make\_pump\_open(int aux)
+\subsubsection{Function \texttt{make\_pump\_open(int aux)}}
 
 This function opens the pump, when the algorithm calls this functions had
 already checked that the plants need water and the pump is closed. The pump is
-opened for a concrete amount of time defined by the variable aux and then calls
-the function make\_pump\_close() to close the pump.
+opened for a concrete amount of time defined by the variable \verb`aux` and then calls
+the function \texttt{make\_pump\_close()} to close the pump.
 
 To open the pump the function sets the GPIO to high using the GPIO function
-gpio\_set.
+\texttt{gpio\_set}.
 
-Function: water\_level\_sensor\_control (int data)
+\subsubsection{Function \texttt{water\_level\_sensor\_control (int data)}}
 
 This function is used to avoid the malfunctioning of the pump caused by the
 lack of water. If the data sent by the water sensor indicates that the water
 level is under a concrete threshold the function calls the function
-make\_pump\_close.
+\texttt{make\_pump\_close}.
 
-Function: add\_data\_table(int id, int data)
+\subsubsection{Function \texttt{add\_data\_table(int id, int data)}}
 
-This function add to the table the data received from the sensors. First of all the function checks if there is existing data of this sensor already in the table, if they exist the function updates the value, if not it add a new line to the table with the new data and the actual time; finally the function calls print\_table to show the new state of the table.
+This function add to the table the data received from the sensors. First of all the function checks if there is existing data of this sensor already in the table, if they exist the function updates the value, if not it add a new line to the table with the new data and the actual time; finally the function calls \verb`print_table` to show the new state of the table.
 
-Function: add\_pid\_controller(int data)
+\subsubsection{Function \texttt{add\_pid\_controller(int data)}}
 
 This function is used to adjust the time that the pump is open, to determine
-that time a set of algorithms are used that take into account the rest of the
-values received from the other sensors and depending on the distance between
+this time a set of algorithms are used that take into account the values
+received from the other sensors and depending on the distance between
 them and with the thresholds, the opening time of the pump is defined.
 
-Function add\_set\_data(int id,int data)
+\subsubsection{Function \texttt{add\_set\_data(int id,int data)}}
 
 This function decides if the pump should open or not, in order to do that it
 compares the values sent from the sensors with a set of thresholds and
-decides to call make\_pump\_open, make\_pump\_close or wait for more values of
-more sensors, it also calls the function that controls the water level sensor
-if it is necessary.
+decides to call \texttt{make\_pump\_open}, \texttt{make\_pump\_close} or wait
+for more values of more sensors, it also calls the function that controls the
+water level sensor if it is necessary.
 
-Function: shell\_pump\_set\_data( int argc, char * argv[])
+\subsubsection{Function \texttt{shell\_pump\_set\_data( int argc, char * argv[])}}
 
-This function is used to control the correct functioning of the pump controller
-algorithm and allows the developers to call the functions without sending real
-data from the sensors but sending it from a console.
+This function (registered as a shell hook) is used to control the correct
+functioning of the pump controller algorithm and allows us to call the
+functions without sending real data from the sensors but sending it from a console.
 
   \begin{figure}[h]
     \centering
     % \def\svgwidth{\columnwidth}
-    \includegraphics[scale=0.16]{stack-collector}
+    \includegraphics[width=\textwidth]{stack-collector}
 	  \caption{Implementation of the pump control node node. It shares the sensor
 	  integration and implemented network stack with the sensor nodes but
 	  extends them to control the pump and forward all incoming data to the
@@ -534,7 +536,9 @@ consequences can be avoided with taking the right measures. Among other control
 functions in the system also monitoring requires remote communications.
 Connecting with the sensors through Internet can be achieved using a gateway
 that forwards and transfer all packets from the sensors to some ip address
-outside the internal network of the sensors. Serving as a gateway the node
+outside the internal network of the sensors.
+
+Serving as a gateway the node
 needs not to be placed outdoor nor besides the sensors, so it doesn't have to
 operate on battery, this means that using a high-end programmer as the gateway
 for our use-case is possible, because unlike the sensors, we need only one host
@@ -547,32 +551,32 @@ programmer like the pi is that RIOT can't be used for it, because kernel in
 RIOT was not ported for the ARM processors. This would break the rule of
 unifying the system on all nodes of the IoT project, which would be helpful for
 avoiding redundant costs in the future.
-\\Following the instructions included in RIOT git \cite{riot_lowpan} enables having
+
+Following the instructions included in RIOT git \cite{riot_lowpan} enables having
 a functioning 6LoWPAN transceiver on the Raspberry pi without any problems. We
 began programming the pi from scratch using an erased SD card.
-\\
+
 In briefly our setup has included the following:
 \begin{enumerate}
-	\item Setup Raspian OS on the SD card, this is a UNIX-like operating system made for the Raspberry pi.
+	\item Setup Raspian OS on the SD card, this is a UNIX-like operating system optimised for the Raspberry pi.
 	\item SSH (Secured Shell Host  openBSD) is a program for the communications between computers on different networks using the shell layer, it is installed by default in Raspian but using it requires enabling flags in the configurations of OS.
 	\item Setup the 6LoWPAN module and connect it to the raspberry pi, it worked without the need to reconfigure the kernel of Raspian.
-	\item Setup IPv6 for the 6LoWPAN interface and make sure the communications are working with pinging the rest of network.
+	\item Setup IPv6 for the 6LoWPAN interface and make sure the communications are working by pinging the rest of network.
 \end{enumerate}
 
  After debugging and making sure that the communications on the physical layer
  are working properly and that the rest of network is communicating with the pi
- per 6LoWPAN, we setup a static IPv6 for the interfaces, whenever Raspian boots
+ per 6LoWPAN, we setup a static IPv6 for the interfaces, so that whenever Raspian boots
  it uses that address.
 
- There are additional configurations should be done to the network layer in
- order to encapsulate the IPv6 packets and forwards them to an IP address
+ There are additional configurations that should be done to the network layer in
+ order to encapsulate the IPv6 packets and forward them to an IP address
  outside the watering system's network. Ip route provides management tools for
  manipulating any of the routing tables, it can be used to forward the packets
  directly with working only on the network layer, it is mentioned in the
- documentations of RIOT for setting up the 6LoWPAN and raspberry pi, but the
- inter-polarity challenge for connecting the sensors with the internet cannot
- be overcame in our implementation without processing the packets on the
- application layer before forwarding them, therefore we have written a python
+ documentations of RIOT for setting up the 6LoWPAN and raspberry pi, but we could
+ not use this because we also wanted to translate them from h2o protocol
+ on UDP to HTTP on TCP, therefore we have written a python
  program running in an endless loop to capture all the incoming packets to the
  raspberry pi, interpret and convert them to the required protocol (HTTP), and
  finally forwards the packets to a predefined (Webserver) address. The only
@@ -589,7 +593,9 @@ One way for reading the data from the sensors remotely is to have a running
 service providing access to the readers and the writers which are in our case
 the user (web browser) and the watering system (Sensor). An available option is
 using a web server running with a static ip address, and an apache service to
-handle the incoming requests/responses of the clients. For testing the project
+handle the incoming requests/responses of the clients.
+
+For testing the project
 we configured a private apache2 web server using ssh communication (as with
 raspberry pi). We decided to use python add-on called django to handle the HTTP
 requests, the apache module named mod\_wsgi embeds Python applications within
@@ -604,21 +610,21 @@ provides the complete structure for building a website.
 We implemented an HTTP API for reading and writing the humidity and temperature
 values of the sensors.
 
-Functions in our HTTP API include get and set sensor data.\\
+Functions in our HTTP API include get and set sensor data.
 
 Write data to database:
-\\ http://IP.ADDRESS:PORT:/set\_sensor\_data . \\
+\\ \texttt{http://IP.ADDRESS:PORT:/set\_sensor\_data} .
 
 Read data from database (Json):
-\\ http://IP.ADDRESS:PORT:/get\_sensor\_data .
+\\ \texttt{http://IP.ADDRESS:PORT:/get\_sensor\_data} .
 
 Finally the data of the sensors is presented in an HTML table designed with
-boostrap css, the table rows include data presenting in sqllite database, we
+bootstrap css, the table rows include data presenting in sqllite database, we
 used django template language for loading html page dynamically.
 
 In our web server we didn't have to reach the complete RESTful implementation
 because our interface consist only of two functions, however both of the
-functions for setting and getting the data use HTTP get request
+functions for setting and getting the data use HTTP GET requests.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusion}
