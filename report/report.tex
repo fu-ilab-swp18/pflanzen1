@@ -132,11 +132,6 @@ Prof. Dr. Matthias Wählisch
 
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Introduction}
-
-
-
 
 
 
@@ -286,6 +281,7 @@ Prof. Dr. Matthias Wählisch
     \label{fig:stack_sensor}
   \end{figure}
 
+
 %%%%%%%%%%
 \subsection{Network}
 The network layout we planned was based on the following assumptions:
@@ -311,7 +307,7 @@ the house. As the pump control needs to know the sensor data of all sensors, it
 makes sense to send all data to it and have it forward everything to the
 gateway. Because of this central role we are calling it the \emph{controller}
 node. These considerations lead to the network layout shown in
-Figure~\ref{fig:schema}.
+Figure~\ref{fig:schema} (page \pageref{fig:schema}).
 
 As the 802.15.4 network is not directly connected to the internet, we decided
 to use a hard-configured unique local network from the fc00::/8 address
